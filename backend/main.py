@@ -52,35 +52,51 @@ EMBEDDING_MODEL_IDS = {
     'pt': 'rufimelo/bert-large-portuguese-cased-sts'
 }
 
-# Initialize embedding models (loads once at startup)
-print("Loading multilingual embedding models...")
-print("  - Loading English model...")
-embedding_models = {
-    'en': SentenceTransformer(EMBEDDING_MODEL_IDS['en'])
-}
-print("  - Loading French model...")
-embedding_models['fr'] = SentenceTransformer(EMBEDDING_MODEL_IDS['fr'])
-print("  - Loading Portuguese model...")
-embedding_models['pt'] = SentenceTransformer(EMBEDDING_MODEL_IDS['pt'])
-print("✓ All embedding models loaded!")
-
-# Initialize tokenizers and chunkers for each language
-print("Initializing HybridChunkers with language-specific tokenizers...")
+# Initialize empty model containers (lazy loading)
+embedding_models = {}
 tokenizers = {}
 chunkers = {}
+model_loading_status = {
+    'en': False,
+    'fr': False,
+    'pt': False
+}
 
-for lang, model_id in EMBEDDING_MODEL_IDS.items():
-    print(f"  - Creating {lang} tokenizer and chunker...")
-    tokenizers[lang] = HuggingFaceTokenizer(
-        tokenizer=AutoTokenizer.from_pretrained(model_id),
-        max_tokens=MAX_TOKENS
-    )
-    chunkers[lang] = HybridChunker(
-        tokenizer=tokenizers[lang],
-        merge_peers=True  # Merge small adjacent chunks with same heading
-    )
+import threading
+import asyncio
 
-print("✓ All chunkers initialized!")
+def load_language_model(lang: str):
+    """Load embedding model, tokenizer, and chunker for a specific language"""
+    if lang in embedding_models:
+        return  # Already loaded
+
+    print(f"Loading {SUPPORTED_LANGUAGES.get(lang, lang)} model ({lang})...")
+    try:
+        model_id = EMBEDDING_MODEL_IDS[lang]
+
+        # Load embedding model
+        embedding_models[lang] = SentenceTransformer(model_id)
+
+        # Load tokenizer and chunker
+        tokenizers[lang] = HuggingFaceTokenizer(
+            tokenizer=AutoTokenizer.from_pretrained(model_id),
+            max_tokens=MAX_TOKENS
+        )
+        chunkers[lang] = HybridChunker(
+            tokenizer=tokenizers[lang],
+            merge_peers=True
+        )
+
+        model_loading_status[lang] = True
+        print(f"✓ {SUPPORTED_LANGUAGES.get(lang, lang)} model loaded!")
+    except Exception as e:
+        print(f"✗ Error loading {lang} model: {e}")
+
+def preload_models_background():
+    """Pre-load models in priority order: FR → EN → PT"""
+    priority_order = ['fr', 'en', 'pt']
+    for lang in priority_order:
+        load_language_model(lang)
 
 
 def detect_language(text: str) -> str:
@@ -215,8 +231,14 @@ class DocumentProcessor:
         if not self.docling_document:
             raise HTTPException(status_code=500, detail="No Docling document available for chunking")
 
+        # Lazy-load model if not already loaded
+        if self.document_language not in chunkers:
+            load_language_model(self.document_language)
+
         # Get the appropriate chunker for the document language
-        chunker = chunkers.get(self.document_language, chunkers['en'])
+        chunker = chunkers.get(self.document_language, chunkers.get('en'))
+        if not chunker:
+            raise HTTPException(status_code=500, detail=f"Chunker for {self.document_language} not available")
         print(f"Using {self.document_language} HybridChunker for document structure-aware chunking")
 
         # Chunk the document using HybridChunker
@@ -243,8 +265,14 @@ class DocumentProcessor:
                 metadata={"hnsw:space": "cosine"}
             )
 
+            # Lazy-load model if not already loaded
+            if self.document_language not in embedding_models:
+                load_language_model(self.document_language)
+
             # Get the appropriate embedding model for document language
-            embedding_model = embedding_models.get(self.document_language, embedding_models['en'])
+            embedding_model = embedding_models.get(self.document_language, embedding_models.get('en'))
+            if not embedding_model:
+                raise HTTPException(status_code=500, detail=f"Embedding model for {self.document_language} not available")
             print(f"Using {self.document_language} embedding model for document chunks")
 
             # Generate embeddings
@@ -267,8 +295,14 @@ class DocumentProcessor:
             raise HTTPException(status_code=400, detail="No document loaded")
 
         try:
+            # Lazy-load model if not already loaded
+            if self.document_language not in embedding_models:
+                load_language_model(self.document_language)
+
             # Get the appropriate embedding model for document language
-            embedding_model = embedding_models.get(self.document_language, embedding_models['en'])
+            embedding_model = embedding_models.get(self.document_language, embedding_models.get('en'))
+            if not embedding_model:
+                raise HTTPException(status_code=500, detail=f"Embedding model for {self.document_language} not available")
 
             # Embed query
             query_embedding = embedding_model.encode([query])[0].tolist()
@@ -327,9 +361,30 @@ Answer:"""
 
 # API Endpoints
 
+@app.on_event("startup")
+async def startup_event():
+    """Start background model loading on app startup"""
+    print("🚀 Starting server...")
+    print("⏳ Models will load in background: FR → EN → PT")
+    # Run model loading in a separate thread to not block startup
+    threading.Thread(target=preload_models_background, daemon=True).start()
+
 @app.get("/api/health")
 async def health():
     return {"message": "Docling RAG API is running!", "status": "healthy"}
+
+@app.get("/api/model-status")
+async def model_status():
+    """Return the loading status of all models"""
+    return {
+        "models": {
+            "fr": {"loaded": model_loading_status['fr'], "name": "French"},
+            "en": {"loaded": model_loading_status['en'], "name": "English"},
+            "pt": {"loaded": model_loading_status['pt'], "name": "Portuguese"}
+        },
+        "any_loaded": any(model_loading_status.values()),
+        "all_loaded": all(model_loading_status.values())
+    }
 
 
 @app.post("/upload")

@@ -775,5 +775,50 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Check model status and disable upload button until ready
+async function checkModelStatus() {
+    try {
+        const response = await fetch(`${API_BASE}/api/model-status`);
+        const data = await response.json();
+
+        if (data.any_loaded) {
+            // At least one model is loaded, enable upload button
+            uploadBtn.disabled = false;
+            return true; // Stop polling
+        } else {
+            // No models loaded yet, keep upload button disabled
+            uploadBtn.disabled = true;
+            return false; // Continue polling
+        }
+    } catch (error) {
+        // If can't reach server yet, keep polling
+        console.log('Waiting for server...');
+        return false;
+    }
+}
+
+// Poll model status on page load
+async function initializeModelStatus() {
+    // Disable upload button initially
+    uploadBtn.disabled = true;
+
+    // Poll every 2 seconds until at least one model is ready
+    const pollInterval = setInterval(async () => {
+        const ready = await checkModelStatus();
+        if (ready) {
+            clearInterval(pollInterval);
+        }
+    }, 2000);
+
+    // Also check immediately
+    const ready = await checkModelStatus();
+    if (ready) {
+        clearInterval(pollInterval);
+    }
+}
+
 // Initialize language on page load
 updatePageLanguage();
+
+// Initialize model status check
+initializeModelStatus();

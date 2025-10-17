@@ -91,20 +91,24 @@ Currently no automated tests. Test manually by:
 ### Key Components
 
 **backend/main.py**:
-- `embedding_models`: Dict of 3 language-specific SentenceTransformer models (EN/FR/PT)
-- `tokenizers`: Dict of 3 HuggingFace tokenizers matching each embedding model
-- `chunkers`: Dict of 3 HybridChunker instances (one per language) for structure-aware chunking
+- `embedding_models`: Dict of 3 language-specific SentenceTransformer models (EN/FR/PT) - lazy loaded
+- `tokenizers`: Dict of 3 HuggingFace tokenizers matching each embedding model - lazy loaded
+- `chunkers`: Dict of 3 HybridChunker instances (one per language) for structure-aware chunking - lazy loaded
+- `model_loading_status`: Dict tracking which models are loaded (used by `/api/model-status`)
+- `load_language_model()`: Lazy-loads model, tokenizer, and chunker for a specific language on-demand
+- `preload_models_background()`: Background task that pre-loads models in priority order (FR → EN → PT)
 - `detect_language()`: Detects text language using langdetect, defaults to English
 - `translate_text()`: Translates between languages using deep-translator
 - `DocumentProcessor` class: Handles HybridChunking, embedding, vector storage, stores document language
 - `generate_answer()`: Builds multilingual prompt and calls Gemini API with language instructions
-- API endpoints: `/upload`, `/ask`, `/clear`, `/api/health`
+- API endpoints: `/upload`, `/ask`, `/clear`, `/api/health`, `/api/model-status`
 - Static file serving: Mounts `../frontend` at root path
 
 **frontend/script.js**:
 - State management: `sessionId`, `apiKey`
 - Event handlers: upload, send question, clear session
 - Message rendering: `addMessage()` with sources display
+- Model status polling: `checkModelStatus()` and `initializeModelStatus()` poll `/api/model-status` every 2s until models ready, disable upload button until at least one model is loaded
 
 ### Configuration Points
 
@@ -155,7 +159,7 @@ port = int(os.getenv("PORT", 8001))
 
 2. **Language-Specific Embeddings**: Each language uses its own specialized embedding model for better semantic search quality. Models are stored in `embedding_models` dict.
 
-3. **Model Loading**: All 3 embedding models (~1.5GB total) load at startup. English model pre-downloaded in Docker build, FR/PT download on first run to avoid build space issues.
+3. **Lazy Model Loading (Render Optimization)**: Models (~1.5GB total) load in background on startup in priority order (FR → EN → PT) to minimize cold start time. Server starts immediately (~45s on Render free tier) and UI becomes responsive while French model loads first (~10s). Models are lazy-loaded on-demand if accessed before background loading completes. Frontend polls `/api/model-status` and enables upload button when first model is ready. English model pre-downloaded in Docker build, FR/PT download on first run.
 
 4. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks (backend/main.py).
 
