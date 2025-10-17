@@ -8,6 +8,9 @@ ENV SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence-transformers
 # Set working directory
 WORKDIR /app
 
+# Create cache directory with proper permissions BEFORE anything else
+RUN mkdir -p /app/.cache && chmod -R 777 /app/.cache
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -28,7 +31,8 @@ RUN python -c "from sentence_transformers import SentenceTransformer; \
     print('French model downloaded!'); \
     print('Downloading Portuguese model...'); \
     SentenceTransformer('rufimelo/bert-large-portuguese-cased-sts'); \
-    print('Portuguese model downloaded! All models ready.')"
+    print('Portuguese model downloaded! All models ready.')" \
+    && chmod -R 777 /app/.cache
 
 # Copy application code
 COPY backend/ backend/
