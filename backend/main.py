@@ -176,6 +176,8 @@ class DocumentProcessor:
     def process_document(self, file_path: str, file_extension: str) -> dict:
         """Process document with Docling"""
         try:
+            send_progress(self.session_id, "📋 Validating document...", "validating")
+
             # Check PDF page limit
             if file_extension == "pdf":
                 within_limit, num_pages = self.check_pdf_pages(file_path)
@@ -185,12 +187,17 @@ class DocumentProcessor:
                         detail=f"Document has {num_pages} pages. Maximum allowed: {MAX_PAGES} pages."
                     )
 
+            # Inform user about potential model download on first run
+            send_progress(self.session_id, "📄 Converting document to markdown (first time may download OCR models, ~1-2 min)...", "converting")
+
             # Convert document with Docling
             converter = DocumentConverter()
             result = converter.convert(file_path)
 
             # Store the DoclingDocument for HybridChunker
             self.docling_document = result.document
+
+            send_progress(self.session_id, "📝 Extracting text from document...", "extracting")
             markdown_content = self.docling_document.export_to_markdown()
 
             send_progress(self.session_id, "🌍 Detecting document language...", "detecting_language")
@@ -502,7 +509,7 @@ async def upload_document(
         # Wait a bit for EventSource to connect before sending first message
         await asyncio.sleep(0.5)
 
-        send_progress(session_id, "📄 Converting document to markdown...", "converting")
+        send_progress(session_id, "⏳ Starting document processing...", "starting")
 
         try:
             processor = DocumentProcessor(session_id)

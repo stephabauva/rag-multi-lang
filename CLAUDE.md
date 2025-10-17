@@ -64,6 +64,19 @@ Currently no automated tests. Test manually by:
 
 1. **Document Upload** in backend/main.py `POST /upload`:
    - User uploads document + API key via frontend
+   - Backend returns session_id immediately and starts background processing
+   - **Real-time progress updates via Server-Sent Events** (SSE):
+     1. ⏳ Starting document processing...
+     2. 📋 Validating document...
+     3. 📄 Converting document to markdown (first time may download OCR models, ~1-2 min)...
+     4. 📝 Extracting text from document...
+     5. 🌍 Detecting document language...
+     6. ✓ Language: [Detected Language]
+     7. 🤖 Loading [Language] model (first time, ~30-60s)... (if needed)
+     8. ✂️ Creating smart chunks...
+     9. 🧠 Generating embeddings...
+     10. 💾 Storing in vector database...
+     11. ✅ Ready! Ask your questions below.
    - Backend validates file type and page limit (max 20 pages)
    - Docling converts document to structured DoclingDocument and markdown
    - Language extracted from Docling metadata or detected from content (first 1000 chars)
@@ -71,7 +84,7 @@ Currently no automated tests. Test manually by:
    - Uses language-specific tokenizer matching the embedding model for optimal chunk sizes
    - Document embedded using language-specific model (EN/FR/PT)
    - Vectors stored in ChromaDB with session-specific collection
-   - Response includes `document_language` and `language_name`
+   - Session includes `document_language`, `language_name`, and `timestamp`
 
 2. **Question Answering** in backend/main.py `POST /ask`:
    - Detect user question language using langdetect
@@ -83,10 +96,12 @@ Currently no automated tests. Test manually by:
    - Answer, source chunks, and language info returned to frontend
 
 3. **Session Management**:
-   - Single session per server (demo app constraint)
-   - Sessions stored in-memory dict in backend/main.py
-   - New upload clears ALL existing sessions
-   - `/clear` endpoint deletes ChromaDB collection to prevent memory leaks
+   - **Multi-user support**: Multiple concurrent sessions allowed
+   - Sessions stored in-memory dict in backend/main.py with timestamps
+   - Sessions auto-expire after 1 hour (3600 seconds)
+   - On new upload, only expired sessions are cleaned up
+   - `/clear` endpoint deletes specific session's ChromaDB collection to prevent memory leaks
+   - Each session includes: processor, api_key, filename, timestamp
 
 ### Key Components
 
@@ -159,17 +174,19 @@ port = int(os.getenv("PORT", 8001))
 
 3. **Lazy Model Loading**: Models (~1.5GB total) load in background on startup in priority order (FR → EN → PT) to minimize cold start time. Server starts immediately and UI becomes responsive while models load. Models are lazy-loaded on-demand if accessed before background loading completes. Frontend polls `/api/model-status` and enables upload button when first model is ready. English model pre-downloaded in Dockerfile (~80MB), FR/PT download on first use.
 
-4. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks.
+4. **Multi-User Sessions**: App supports multiple concurrent sessions. Sessions expire after 1 hour to prevent memory leaks. Each session is independent with its own vector store.
 
 5. **In-Memory Storage**: All vector stores and sessions are ephemeral. Server restart = data loss. This is by design for demo simplicity.
 
 6. **API Key Handling**: Gemini API key stored in session dict, passed from frontend on each upload. No server-side persistence.
 
-7. **Static File Serving**: Backend serves frontend files via FastAPI's StaticFiles mount. Frontend lives in `../frontend` relative to backend directory.
+7. **Real-Time Progress Updates**: Uses Server-Sent Events (SSE) to stream progress updates to the frontend during document processing. Frontend connects to `/api/progress/{session_id}` and receives 11 distinct progress steps, providing full visibility into the processing pipeline. SSE connection includes keepalive pings and auto-closes on completion or error.
 
-8. **PDF Page Validation**: Uses pypdf to check page count before Docling processing. Non-PDF formats estimated at ~3000 chars per page.
+8. **Static File Serving**: Backend serves frontend files via FastAPI's StaticFiles mount. Frontend lives in `../frontend` relative to backend directory.
 
-9. **HybridChunker Strategy**: Uses Docling's HybridChunker for intelligent, structure-aware chunking. Respects document hierarchy (headings, sections, tables), uses language-specific tokenizers matching embedding models, merges small peer chunks with same headings (`merge_peers=True`), and ensures optimal semantic coherence in backend/main.py `_chunk_with_hybrid_chunker()`.
+9. **PDF Page Validation**: Uses pypdf to check page count before Docling processing. Non-PDF formats estimated at ~3000 chars per page.
+
+10. **HybridChunker Strategy**: Uses Docling's HybridChunker for intelligent, structure-aware chunking. Respects document hierarchy (headings, sections, tables), uses language-specific tokenizers matching embedding models, merges small peer chunks with same headings (`merge_peers=True`), and ensures optimal semantic coherence in backend/main.py `_chunk_with_hybrid_chunker()`.
 
 ## Deployment
 
