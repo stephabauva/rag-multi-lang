@@ -13,6 +13,8 @@ import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
+from langdetect import detect, LangDetectException
+from deep_translator import GoogleTranslator
 
 # Constants
 MAX_PAGES = 20
@@ -34,10 +36,51 @@ app.add_middleware(
 # In-memory storage for sessions
 sessions = {}
 
-# Initialize embedding model (loads once at startup)
-print("Loading embedding model...")
-embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-print("Embedding model loaded!")
+# Language code mapping (Docling uses ISO 639-1, langdetect returns similar codes)
+SUPPORTED_LANGUAGES = {
+    'en': 'English',
+    'fr': 'French',
+    'pt': 'Portuguese'
+}
+
+# Initialize embedding models (loads once at startup)
+print("Loading multilingual embedding models...")
+print("  - Loading English model...")
+embedding_models = {
+    'en': SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+}
+print("  - Loading French model...")
+embedding_models['fr'] = SentenceTransformer('dangvantuan/sentence-camembert-large')
+print("  - Loading Portuguese model...")
+embedding_models['pt'] = SentenceTransformer('rufimelo/bert-large-portuguese-cased-sts')
+print("✓ All embedding models loaded!")
+
+
+def detect_language(text: str) -> str:
+    """Detect language of text, return ISO 639-1 code (en/fr/pt), default to 'en'"""
+    try:
+        lang = detect(text)
+        # Map detected language to supported languages
+        if lang in SUPPORTED_LANGUAGES:
+            return lang
+        # If detected language not supported, default to English
+        return 'en'
+    except LangDetectException:
+        # If detection fails, default to English
+        return 'en'
+
+
+def translate_text(text: str, source_lang: str, target_lang: str) -> str:
+    """Translate text from source language to target language"""
+    if source_lang == target_lang:
+        return text
+
+    try:
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
+        return translator.translate(text)
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return text  # Return original text if translation fails
 
 
 class DocumentProcessor:
@@ -51,6 +94,7 @@ class DocumentProcessor:
         ))
         self.collection = None
         self.document_content = ""
+        self.document_language = "en"  # Default to English
 
     def check_pdf_pages(self, file_path: str) -> tuple[bool, int]:
         """Check if PDF is within page limit"""
@@ -78,6 +122,28 @@ class DocumentProcessor:
             result = converter.convert(file_path)
             markdown_content = result.document.export_to_markdown()
 
+            # Extract document language from Docling metadata
+            doc_lang = None
+            if hasattr(result.document, 'lang') and result.document.lang:
+                doc_lang = result.document.lang.lower()
+            elif hasattr(result.document, 'metadata') and result.document.metadata:
+                # Check metadata for language
+                metadata = result.document.metadata
+                if hasattr(metadata, 'language'):
+                    doc_lang = metadata.language.lower()
+                elif isinstance(metadata, dict) and 'language' in metadata:
+                    doc_lang = metadata['language'].lower()
+
+            # If Docling didn't detect language, use content-based detection
+            if not doc_lang or doc_lang not in SUPPORTED_LANGUAGES:
+                # Detect from first 1000 chars of content
+                doc_lang = detect_language(markdown_content[:1000])
+                print(f"Language detected from content: {doc_lang}")
+            else:
+                print(f"Language from Docling: {doc_lang}")
+
+            self.document_language = doc_lang
+
             # Estimate pages for non-PDF formats
             if file_extension != "pdf":
                 estimated_pages = len(markdown_content) // 3000
@@ -99,7 +165,9 @@ class DocumentProcessor:
                 "status": "success",
                 "message": "Document processed successfully",
                 "num_chunks": len(chunks),
-                "content_length": len(markdown_content)
+                "content_length": len(markdown_content),
+                "document_language": self.document_language,
+                "language_name": SUPPORTED_LANGUAGES.get(self.document_language, "Unknown")
             }
 
         except HTTPException:
@@ -142,6 +210,10 @@ class DocumentProcessor:
                 metadata={"hnsw:space": "cosine"}
             )
 
+            # Get the appropriate embedding model for document language
+            embedding_model = embedding_models.get(self.document_language, embedding_models['en'])
+            print(f"Using {self.document_language} embedding model for document chunks")
+
             # Generate embeddings
             embeddings = embedding_model.encode(chunks).tolist()
 
@@ -157,11 +229,14 @@ class DocumentProcessor:
             raise HTTPException(status_code=500, detail=f"Error creating vector store: {str(e)}")
 
     def search_similar(self, query: str, top_k: int = 3) -> list[str]:
-        """Search for similar chunks"""
+        """Search for similar chunks using document language embedding model"""
         if not self.collection:
             raise HTTPException(status_code=400, detail="No document loaded")
 
         try:
+            # Get the appropriate embedding model for document language
+            embedding_model = embedding_models.get(self.document_language, embedding_models['en'])
+
             # Embed query
             query_embedding = embedding_model.encode([query])[0].tolist()
 
@@ -177,8 +252,8 @@ class DocumentProcessor:
             raise HTTPException(status_code=500, detail=f"Error searching: {str(e)}")
 
 
-def generate_answer(query: str, context_chunks: list[str], api_key: str) -> str:
-    """Generate answer using Google Gemini"""
+def generate_answer(query: str, context_chunks: list[str], api_key: str, user_language: str = 'en') -> str:
+    """Generate answer using Google Gemini in the user's language"""
     try:
         # Configure Gemini
         genai.configure(api_key=api_key)
@@ -187,9 +262,20 @@ def generate_answer(query: str, context_chunks: list[str], api_key: str) -> str:
         # Build context
         context = "\n\n".join([f"Context {i+1}:\n{chunk}" for i, chunk in enumerate(context_chunks)])
 
+        # Language instruction for Gemini
+        language_instruction = ""
+        if user_language == 'fr':
+            language_instruction = "\n\nIMPORTANT: You must answer in FRENCH (français)."
+        elif user_language == 'pt':
+            language_instruction = "\n\nIMPORTANT: You must answer in PORTUGUESE (português)."
+        elif user_language == 'en':
+            language_instruction = "\n\nIMPORTANT: You must answer in ENGLISH."
+        else:
+            language_instruction = f"\n\nIMPORTANT: You must answer in the same language as the question."
+
         # Build prompt
         prompt = f"""You are a helpful assistant answering questions about a document.
-Use the following context to answer the question. If you cannot answer based on the context, say so.
+Use the following context to answer the question. If you cannot answer based on the context, say so.{language_instruction}
 
 {context}
 
@@ -278,7 +364,7 @@ async def ask_question(
     session_id: str = Form(...),
     question: str = Form(...)
 ):
-    """Ask a question about the uploaded document"""
+    """Ask a question about the uploaded document with multilingual support"""
 
     # Get session
     if session_id not in sessions:
@@ -289,21 +375,43 @@ async def ask_question(
     api_key = session["api_key"]
 
     try:
-        # Search for relevant chunks
-        context_chunks = processor.search_similar(question, top_k=3)
+        # Detect user's question language
+        user_language = detect_language(question)
+        document_language = processor.document_language
+
+        print(f"User question language: {user_language}, Document language: {document_language}")
+
+        # Translate question to document language if different
+        search_query = question
+        if user_language != document_language:
+            print(f"Translating question from {user_language} to {document_language}")
+            search_query = translate_text(question, user_language, document_language)
+            print(f"Translated query: {search_query}")
+
+        # Search for relevant chunks using translated query
+        context_chunks = processor.search_similar(search_query, top_k=3)
 
         if not context_chunks:
+            # Return "no info found" message in user's language
+            no_info_messages = {
+                'en': "No relevant information found in the document.",
+                'fr': "Aucune information pertinente trouvée dans le document.",
+                'pt': "Nenhuma informação relevante encontrada no documento."
+            }
             return {
-                "answer": "No relevant information found in the document.",
+                "answer": no_info_messages.get(user_language, no_info_messages['en']),
                 "sources": []
             }
 
-        # Generate answer with Gemini
-        answer = generate_answer(question, context_chunks, api_key)
+        # Generate answer with Gemini in user's language
+        # Pass the original question (not translated) so Gemini sees the user's language
+        answer = generate_answer(question, context_chunks, api_key, user_language)
 
         return {
             "answer": answer,
-            "sources": context_chunks
+            "sources": context_chunks,
+            "user_language": user_language,
+            "document_language": document_language
         }
 
     except Exception as e:

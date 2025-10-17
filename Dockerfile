@@ -13,8 +13,12 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pre-download embedding model
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+# Pre-download only English model to verify installation
+# Other models will be downloaded on first run to avoid build-time space issues
+RUN python -c "from sentence_transformers import SentenceTransformer; \
+    print('Downloading English model...'); \
+    SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'); \
+    print('English model downloaded! FR and PT models will download on first run.')"
 
 # Copy application code
 COPY backend/ backend/
