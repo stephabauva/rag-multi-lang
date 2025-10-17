@@ -7,7 +7,7 @@ const translations = {
             getStarted: "Commencer"
         },
         hero: {
-            badge: "Propulsé par IA Avancée • Multilingue FR/EN/PT",
+            badge: "Multilingue FR/EN/PT",
             title1: "Transformez vos documents en",
             title2: "Conversations Intelligentes",
             description: "Téléchargez n'importe quel document et posez des questions en langage naturel. Obtenez des réponses instantanées et précises grâce à une technologie IA de pointe.",
@@ -102,7 +102,7 @@ const translations = {
         },
         footer: {
             tagline: "Transformez vos documents en conversations intelligentes",
-            copyright: "© 2025 IntelliDoc AI. Propulsé par Docling & Google Gemini."
+            copyright: "© 2025 IntelliDoc AI. Propulsé par Google Gemini."
         },
         messages: {
             apiKeyRequired: "Veuillez entrer votre clé API Google Gemini",
@@ -121,7 +121,7 @@ const translations = {
             getStarted: "Get Started"
         },
         hero: {
-            badge: "Powered by Advanced AI • Multilingual FR/EN/PT",
+            badge: "Multilingual FR/EN/PT",
             title1: "Transform Your Documents into",
             title2: "Intelligent Conversations",
             description: "Upload any document and ask questions in natural language. Get instant, accurate answers powered by cutting-edge AI technology.",
@@ -216,7 +216,7 @@ const translations = {
         },
         footer: {
             tagline: "Transform your documents into intelligent conversations",
-            copyright: "© 2025 IntelliDoc AI. Powered by Docling & Google Gemini."
+            copyright: "© 2025 IntelliDoc AI. Powered by Google Gemini."
         },
         messages: {
             apiKeyRequired: "Please enter your Google Gemini API key",
@@ -235,7 +235,7 @@ const translations = {
             getStarted: "Começar"
         },
         hero: {
-            badge: "Powered by IA Avançada • Multilíngue FR/EN/PT",
+            badge: "Multilíngue FR/EN/PT",
             title1: "Transforme seus Documentos em",
             title2: "Conversas Inteligentes",
             description: "Carregue qualquer documento e faça perguntas em linguagem natural. Obtenha respostas instantâneas e precisas com tecnologia de IA de ponta.",
@@ -330,7 +330,7 @@ const translations = {
         },
         footer: {
             tagline: "Transforme seus documentos em conversas inteligentes",
-            copyright: "© 2025 IntelliDoc AI. Powered by Docling & Google Gemini."
+            copyright: "© 2025 IntelliDoc AI. Powered by Google Gemini."
         },
         messages: {
             apiKeyRequired: "Por favor, digite sua chave API Google Gemini",
