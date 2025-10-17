@@ -22,8 +22,9 @@ ENV EASYOCR_MODULE_PATH=/app/.cache/easyocr
 ENV PIP_NO_CACHE_DIR=1
 ENV PATH=/root/.local/bin:$PATH
 
-# Copy Python packages from builder
+# Copy Python packages from builder and fix permissions
 COPY --from=builder /root/.local /root/.local
+RUN chmod -R 755 /root/.local
 
 # Set working directory
 WORKDIR /app
