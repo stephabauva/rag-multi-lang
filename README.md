@@ -76,7 +76,7 @@ docling-rag-webapp/
 
 5. **Open browser**
    ```
-   http://localhost:8000
+   http://localhost:8001
    ```
 
 ## Usage
@@ -172,12 +172,12 @@ COPY backend/ backend/
 COPY frontend/ frontend/
 
 WORKDIR /app/backend
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
 ```
 
 ```bash
 docker build -t docling-rag .
-docker run -p 8000:8000 docling-rag
+docker run -p 8001:8001 docling-rag
 ```
 
 ## Configuration
