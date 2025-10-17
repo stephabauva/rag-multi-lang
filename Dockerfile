@@ -4,6 +4,7 @@ FROM python:3.11-slim
 ENV HF_HOME=/app/.cache
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 ENV SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence-transformers
+ENV EASYOCR_MODULE_PATH=/app/.cache/easyocr
 ENV PIP_NO_CACHE_DIR=1
 
 # Set working directory

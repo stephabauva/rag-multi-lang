@@ -775,24 +775,66 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Create loading banner element
+function createLoadingBanner() {
+    const banner = document.createElement('div');
+    banner.id = 'model-loading-banner';
+    banner.style.cssText = `
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `;
+    banner.innerHTML = `
+        <div style="animation: spin 1s linear infinite; width: 20px; height: 20px;">⏳</div>
+        <div>
+            <div style="font-weight: 600;">AI Models Loading...</div>
+            <div style="font-size: 12px; opacity: 0.9;">Please wait ~2-3 minutes for models to download. The app will be ready shortly.</div>
+        </div>
+    `;
+    return banner;
+}
+
 // Check model status and disable upload button until ready
 async function checkModelStatus() {
     try {
         const response = await fetch(`${API_BASE}/api/model-status`);
         const data = await response.json();
 
+        const existingBanner = document.getElementById('model-loading-banner');
+
         if (data.any_loaded) {
             // At least one model is loaded, enable upload button
             uploadBtn.disabled = false;
+            uploadBtn.textContent = t.upload.processBtn;
+            // Remove loading banner if it exists
+            if (existingBanner) {
+                existingBanner.remove();
+            }
             return true; // Stop polling
         } else {
             // No models loaded yet, keep upload button disabled
             uploadBtn.disabled = true;
+            uploadBtn.textContent = "⏳ Waiting for models...";
+            // Add loading banner if it doesn't exist
+            if (!existingBanner) {
+                const uploadCard = document.getElementById('uploadCard');
+                const cardHeader = uploadCard.querySelector('.card-header');
+                cardHeader.after(createLoadingBanner());
+            }
             return false; // Continue polling
         }
     } catch (error) {
         // If can't reach server yet, keep polling
         console.log('Waiting for server...');
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "⏳ Connecting...";
         return false;
     }
 }
