@@ -10,6 +10,7 @@ import warnings
 import asyncio
 import json
 from collections import defaultdict
+import time
 
 # Suppress ChromaDB telemetry warnings
 warnings.filterwarnings("ignore", message=".*capture.*takes 1 positional argument.*")
@@ -175,8 +176,6 @@ class DocumentProcessor:
     def process_document(self, file_path: str, file_extension: str) -> dict:
         """Process document with Docling"""
         try:
-            send_progress(self.session_id, "📄 Converting document to markdown...", "converting")
-
             # Check PDF page limit
             if file_extension == "pdf":
                 within_limit, num_pages = self.check_pdf_pages(file_path)
@@ -475,21 +474,22 @@ async def upload_document(
             detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
         )
 
-    # Clean up ALL existing sessions before creating new one (demo app - single session only)
+    # Clean up sessions older than 1 hour to support multiple concurrent users
+    current_time = time.time()
     for sid in list(sessions.keys()):
-        try:
-            processor = sessions[sid]["processor"]
-            collection_name = f"docs_{sid}"
-            processor.chroma_client.delete_collection(collection_name)
-        except Exception:
-            pass  # Collection might not exist
-        del sessions[sid]
+        session_age = current_time - sessions[sid].get("timestamp", 0)
+        if session_age > 3600:  # 1 hour = 3600 seconds
+            try:
+                processor = sessions[sid]["processor"]
+                collection_name = f"docs_{sid}"
+                processor.chroma_client.delete_collection(collection_name)
+                print(f"Cleaned up expired session {sid} (age: {session_age:.0f}s)")
+            except Exception as e:
+                print(f"Error cleaning up session {sid}: {e}")
+            del sessions[sid]
 
     # Create session
     session_id = str(uuid.uuid4())
-
-    # Send initial progress message
-    send_progress(session_id, "⏳ Uploading document...", "uploading")
 
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
@@ -499,15 +499,21 @@ async def upload_document(
 
     # Process document in background
     async def process_in_background():
+        # Wait a bit for EventSource to connect before sending first message
+        await asyncio.sleep(0.5)
+
+        send_progress(session_id, "📄 Converting document to markdown...", "converting")
+
         try:
             processor = DocumentProcessor(session_id)
             result = processor.process_document(tmp_file_path, file_extension)
 
-            # Store session
+            # Store session with timestamp
             sessions[session_id] = {
                 "processor": processor,
                 "api_key": api_key,
-                "filename": file.filename
+                "filename": file.filename,
+                "timestamp": time.time()
             }
         except Exception as e:
             send_progress(session_id, f"❌ Error: {str(e)}", "error")
