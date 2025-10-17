@@ -15,18 +15,26 @@ const translations = {
             multilingualCheck: "Ça marche !",
             stat1: "Formats de fichiers",
             stat2: "Langues",
-            stat3: "Temps de traitement"
+            stat3: "Temps de traitement (petit doc → 20 pages)"
         },
         upload: {
             title: "Commencer l'Analyse",
             subtitle: "Téléchargez votre document pour commencer",
             apiKeyLabel: "Clé API Google Gemini",
             apiKeyPlaceholder: "Entrez votre clé API",
-            apiKeyHelp1: "Obtenez votre clé API gratuite sur",
+            apiKeyHelp1: "Obtenez votre",
+            freeApiKey: "clé API GRATUITE",
             documentLabel: "Sélectionner un document",
             filePrompt: "Cliquez pour parcourir ou glissez-déposez",
             fileHelp: "Formats supportés : PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)",
             processBtn: "Traiter le document"
+        },
+        apiKeyModal: {
+            title: "Comment obtenir votre clé API gratuite",
+            step1: "Visitez <a href='https://aistudio.google.com/app/apikey' target='_blank' rel='noopener'>Google AI Studio</a>",
+            step2: "Connectez-vous avec votre adresse email Google",
+            step3: "Cliquez sur <strong>« Obtenir une clé API »</strong>",
+            step4: "Copiez votre clé et collez-la dans le champ ci-dessus"
         },
         features: {
             title: "Pourquoi choisir IntelliDoc AI ?",
@@ -121,18 +129,26 @@ const translations = {
             multilingualCheck: "It works!",
             stat1: "File Formats",
             stat2: "Languages",
-            stat3: "Processing Time"
+            stat3: "Processing Time (small doc → 20 pages)"
         },
         upload: {
             title: "Start Analyzing",
             subtitle: "Upload your document to begin",
             apiKeyLabel: "Google Gemini API Key",
             apiKeyPlaceholder: "Enter your API key",
-            apiKeyHelp1: "Get your free API key at",
+            apiKeyHelp1: "Get your",
+            freeApiKey: "FREE API key",
             documentLabel: "Select Document",
             filePrompt: "Click to browse or drag & drop",
             fileHelp: "Supported: PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)",
             processBtn: "Process Document"
+        },
+        apiKeyModal: {
+            title: "How to get your free API key",
+            step1: "Visit <a href='https://aistudio.google.com/app/apikey' target='_blank' rel='noopener'>Google AI Studio</a>",
+            step2: "Sign in with your Google email address",
+            step3: "Click on <strong>\"Get API Key\"</strong>",
+            step4: "Copy your key and paste it in the field above"
         },
         features: {
             title: "Why Choose IntelliDoc AI?",
@@ -227,18 +243,26 @@ const translations = {
             multilingualCheck: "Funciona!",
             stat1: "Formatos de Arquivo",
             stat2: "Idiomas",
-            stat3: "Tempo de Processamento"
+            stat3: "Tempo de Processamento (doc pequeno → 20 páginas)"
         },
         upload: {
             title: "Começar Análise",
             subtitle: "Carregue seu documento para começar",
             apiKeyLabel: "Chave API Google Gemini",
             apiKeyPlaceholder: "Digite sua chave API",
-            apiKeyHelp1: "Obtenha sua chave API gratuita em",
+            apiKeyHelp1: "Obtenha sua",
+            freeApiKey: "chave API GRATUITA",
             documentLabel: "Selecionar Documento",
             filePrompt: "Clique para procurar ou arraste e solte",
             fileHelp: "Suportados: PDF, DOCX, PPTX, XLSX, HTML (Máx 20 páginas)",
             processBtn: "Processar Documento"
+        },
+        apiKeyModal: {
+            title: "Como obter sua chave API gratuita",
+            step1: "Visite o <a href='https://aistudio.google.com/app/apikey' target='_blank' rel='noopener'>Google AI Studio</a>",
+            step2: "Conecte-se com seu endereço de email Google",
+            step3: "Clique em <strong>\"Obter chave API\"</strong>",
+            step4: "Copie sua chave e cole no campo acima"
         },
         features: {
             title: "Por que escolher IntelliDoc AI?",
@@ -692,6 +716,63 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             });
         }
     });
+});
+
+// API Key Modal functionality
+const apiKeyModal = document.getElementById('apiKeyModal');
+const showApiKeyInstructionsBtn = document.getElementById('showApiKeyInstructions');
+const closeApiKeyModalBtn = document.getElementById('closeApiKeyModal');
+const apiKeyStepsContainer = document.getElementById('apiKeySteps');
+
+// Function to populate modal with steps
+function populateApiKeyModal() {
+    const steps = [
+        getNestedTranslation('apiKeyModal.step1'),
+        getNestedTranslation('apiKeyModal.step2'),
+        getNestedTranslation('apiKeyModal.step3'),
+        getNestedTranslation('apiKeyModal.step4')
+    ];
+
+    apiKeyStepsContainer.innerHTML = steps.map((step, index) => `
+        <div class="api-key-step">
+            <div class="api-key-step-number">${index + 1}</div>
+            <div class="api-key-step-content">
+                <p>${step}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Show modal
+function showApiKeyModal(e) {
+    if (e) {
+        e.preventDefault();
+    }
+    populateApiKeyModal();
+    apiKeyModal.classList.add('active');
+}
+
+// Hide modal
+function hideApiKeyModal() {
+    apiKeyModal.classList.remove('active');
+}
+
+// Event listeners
+showApiKeyInstructionsBtn.addEventListener('click', showApiKeyModal);
+closeApiKeyModalBtn.addEventListener('click', hideApiKeyModal);
+
+// Close modal when clicking outside
+apiKeyModal.addEventListener('click', (e) => {
+    if (e.target === apiKeyModal) {
+        hideApiKeyModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && apiKeyModal.classList.contains('active')) {
+        hideApiKeyModal();
+    }
 });
 
 // Initialize language on page load

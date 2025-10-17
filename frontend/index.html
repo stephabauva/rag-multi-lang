@@ -34,7 +34,6 @@
                 </div>
                 <a href="#features" data-i18n="nav.features">Fonctionnalités</a>
                 <a href="#how-it-works" data-i18n="nav.howItWorks">Comment ça marche</a>
-                <a href="#get-started" class="nav-cta" data-i18n="nav.getStarted">Commencer</a>
             </div>
         </div>
     </nav>
@@ -57,7 +56,7 @@
                         <div class="stat-label" data-i18n="hero.stat2">Langues</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">&lt;30s</div>
+                        <div class="stat-number" style="font-size: 1.5rem;">15s-3min</div>
                         <div class="stat-label" data-i18n="hero.stat3">Temps de traitement</div>
                     </div>
                 </div>
@@ -101,7 +100,13 @@
                         placeholder="Entrez votre clé API"
                         class="input-field"
                     >
-                    <small class="help-text"><span data-i18n="upload.apiKeyHelp1">Obtenez votre clé API gratuite sur</span> <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></small>
+                    <div class="api-key-help-prominent">
+                        <span class="icon">🔑</span>
+                        <span class="text">
+                            <span data-i18n="upload.apiKeyHelp1">Obtenez votre</span>
+                            <a href="#" id="showApiKeyInstructions" data-i18n="upload.freeApiKey">clé API GRATUITE</a>
+                        </span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -355,6 +360,26 @@
             </div>
         </div>
     </footer>
+
+    <!-- API Key Instructions Modal -->
+    <div class="api-key-modal" id="apiKeyModal">
+        <div class="api-key-modal-content">
+            <div class="api-key-modal-header">
+                <h3>
+                    <span>🔑</span>
+                    <span data-i18n="apiKeyModal.title">Comment obtenir votre clé API gratuite</span>
+                </h3>
+                <button class="api-key-modal-close" id="closeApiKeyModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="api-key-modal-steps" id="apiKeySteps">
+                <!-- Steps will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
