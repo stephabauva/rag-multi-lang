@@ -499,48 +499,31 @@ async function handleUpload() {
         formData.append('file', file);
         formData.append('api_key', apiKey);
 
-        // Create abort controller for timeout (2 minutes for large docs / model downloads)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
-
         // Show model download message after 15 seconds
         const loadingTimeoutId = setTimeout(() => {
             showLoading(getNestedTranslation('loading.modelDownload'));
         }, 15000);
 
-        try {
-            // Upload
-            const response = await fetch(`${API_BASE}/upload`, {
-                method: 'POST',
-                body: formData,
-                signal: controller.signal
-            });
+        // Upload (no timeout - CPU processing can take a while)
+        const response = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData
+        });
 
-            clearTimeout(timeoutId);
-            clearTimeout(loadingTimeoutId);
+        clearTimeout(loadingTimeoutId);
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(data.detail || 'Upload failed');
-            }
-
-            // Success
-            sessionId = data.session_id;
-            documentNameEl.textContent = data.filename;
-
-            // Show chat interface
-            chatOverlay.classList.add('active');
-
-        } catch (error) {
-            clearTimeout(timeoutId);
-            clearTimeout(loadingTimeoutId);
-
-            if (error.name === 'AbortError') {
-                throw new Error('Upload timed out. Please try again or check your connection.');
-            }
-            throw error;
+        if (!response.ok) {
+            throw new Error(data.detail || 'Upload failed');
         }
+
+        // Success
+        sessionId = data.session_id;
+        documentNameEl.textContent = data.filename;
+
+        // Show chat interface
+        chatOverlay.classList.add('active');
 
     } catch (error) {
         console.error('Upload error:', error);
