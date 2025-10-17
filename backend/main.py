@@ -8,18 +8,20 @@ from typing import Optional
 import uuid
 
 from docling.document_converter import DocumentConverter
+from docling.chunking import HybridChunker
+from docling_core.transforms.chunker.tokenizer.huggingface import HuggingFaceTokenizer
 from pypdf import PdfReader
 import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 import google.generativeai as genai
 from langdetect import detect, LangDetectException
 from deep_translator import GoogleTranslator
 
 # Constants
 MAX_PAGES = 20
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 200
+MAX_TOKENS = 512  # Token limit per chunk for HybridChunker
 
 # Initialize FastAPI
 app = FastAPI(title="Docling RAG API")
@@ -43,17 +45,42 @@ SUPPORTED_LANGUAGES = {
     'pt': 'Portuguese'
 }
 
+# Model IDs for embeddings (reused for tokenizers)
+EMBEDDING_MODEL_IDS = {
+    'en': 'sentence-transformers/all-MiniLM-L6-v2',
+    'fr': 'dangvantuan/sentence-camembert-large',
+    'pt': 'rufimelo/bert-large-portuguese-cased-sts'
+}
+
 # Initialize embedding models (loads once at startup)
 print("Loading multilingual embedding models...")
 print("  - Loading English model...")
 embedding_models = {
-    'en': SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    'en': SentenceTransformer(EMBEDDING_MODEL_IDS['en'])
 }
 print("  - Loading French model...")
-embedding_models['fr'] = SentenceTransformer('dangvantuan/sentence-camembert-large')
+embedding_models['fr'] = SentenceTransformer(EMBEDDING_MODEL_IDS['fr'])
 print("  - Loading Portuguese model...")
-embedding_models['pt'] = SentenceTransformer('rufimelo/bert-large-portuguese-cased-sts')
+embedding_models['pt'] = SentenceTransformer(EMBEDDING_MODEL_IDS['pt'])
 print("✓ All embedding models loaded!")
+
+# Initialize tokenizers and chunkers for each language
+print("Initializing HybridChunkers with language-specific tokenizers...")
+tokenizers = {}
+chunkers = {}
+
+for lang, model_id in EMBEDDING_MODEL_IDS.items():
+    print(f"  - Creating {lang} tokenizer and chunker...")
+    tokenizers[lang] = HuggingFaceTokenizer(
+        tokenizer=AutoTokenizer.from_pretrained(model_id),
+        max_tokens=MAX_TOKENS
+    )
+    chunkers[lang] = HybridChunker(
+        tokenizer=tokenizers[lang],
+        merge_peers=True  # Merge small adjacent chunks with same heading
+    )
+
+print("✓ All chunkers initialized!")
 
 
 def detect_language(text: str) -> str:
@@ -94,6 +121,7 @@ class DocumentProcessor:
         ))
         self.collection = None
         self.document_content = ""
+        self.docling_document = None  # Store DoclingDocument for HybridChunker
         self.document_language = "en"  # Default to English
 
     def check_pdf_pages(self, file_path: str) -> tuple[bool, int]:
@@ -120,7 +148,10 @@ class DocumentProcessor:
             # Convert document with Docling
             converter = DocumentConverter()
             result = converter.convert(file_path)
-            markdown_content = result.document.export_to_markdown()
+
+            # Store the DoclingDocument for HybridChunker
+            self.docling_document = result.document
+            markdown_content = self.docling_document.export_to_markdown()
 
             # Extract document language from Docling metadata
             doc_lang = None
@@ -155,8 +186,8 @@ class DocumentProcessor:
 
             self.document_content = markdown_content
 
-            # Chunk the text
-            chunks = self._chunk_text(markdown_content)
+            # Chunk using HybridChunker with document structure
+            chunks = self._chunk_with_hybrid_chunker()
 
             # Create embeddings and store in ChromaDB
             self._create_vector_store(chunks)
@@ -175,30 +206,32 @@ class DocumentProcessor:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
 
-    def _chunk_text(self, text: str) -> list[str]:
-        """Simple text chunking with overlap"""
+    def _chunk_with_hybrid_chunker(self) -> list[str]:
+        """
+        Use Docling's HybridChunker for hierarchical, structure-aware chunking.
+        This respects document structure (headings, sections, tables) and uses
+        the same tokenizer as the embedding model for optimal chunk sizes.
+        """
+        if not self.docling_document:
+            raise HTTPException(status_code=500, detail="No Docling document available for chunking")
+
+        # Get the appropriate chunker for the document language
+        chunker = chunkers.get(self.document_language, chunkers['en'])
+        print(f"Using {self.document_language} HybridChunker for document structure-aware chunking")
+
+        # Chunk the document using HybridChunker
+        chunk_iter = chunker.chunk(dl_doc=self.docling_document)
+
+        # Extract text from chunks
         chunks = []
-        start = 0
-        text_length = len(text)
+        for chunk in chunk_iter:
+            # Use the contextualize method to get metadata-enriched text
+            chunk_text = chunker.serialize(chunk)
+            if chunk_text and chunk_text.strip():
+                chunks.append(chunk_text.strip())
 
-        while start < text_length:
-            end = start + CHUNK_SIZE
-            chunk = text[start:end]
-
-            # Try to break at sentence boundary
-            if end < text_length:
-                last_period = chunk.rfind('.')
-                last_newline = chunk.rfind('\n')
-                break_point = max(last_period, last_newline)
-
-                if break_point > CHUNK_SIZE // 2:
-                    chunk = chunk[:break_point + 1]
-                    end = start + break_point + 1
-
-            chunks.append(chunk.strip())
-            start = end - CHUNK_OVERLAP
-
-        return [c for c in chunks if c]  # Remove empty chunks
+        print(f"Created {len(chunks)} structure-aware chunks")
+        return chunks
 
     def _create_vector_store(self, chunks: list[str]):
         """Create ChromaDB collection with embeddings"""

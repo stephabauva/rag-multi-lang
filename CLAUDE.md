@@ -9,6 +9,7 @@ A RAG (Retrieval-Augmented Generation) demo application that processes documents
 **Tech Stack:**
 - **Backend**: FastAPI (Python 3.9+)
 - **Document Processing**: Docling (converts PDF/DOCX/PPTX/XLSX/HTML to markdown, includes language detection)
+- **Chunking**: Docling HybridChunker (structure-aware hierarchical chunking with tokenization)
 - **Vector Store**: ChromaDB (in-memory, ephemeral)
 - **Embeddings**: Language-specific sentence-transformers models (local, no API)
   - English: `sentence-transformers/all-MiniLM-L6-v2`
@@ -64,9 +65,10 @@ Currently no automated tests. Test manually by:
 1. **Document Upload** (`POST /upload` in backend/main.py):
    - User uploads document + API key via frontend
    - Backend validates file type and page limit (max 20 pages)
-   - Docling converts document to markdown and detects document language
+   - Docling converts document to structured DoclingDocument and markdown
    - Language extracted from Docling metadata or detected from content (first 1000 chars)
-   - Text chunked into ~1000 char chunks with 200 char overlap
+   - HybridChunker creates structure-aware chunks (respects headings, sections, tables) with max 512 tokens
+   - Uses language-specific tokenizer matching the embedding model for optimal chunk sizes
    - Document embedded using language-specific model (EN/FR/PT)
    - Vectors stored in ChromaDB with session-specific collection
    - Response includes `document_language` and `language_name`
@@ -90,9 +92,11 @@ Currently no automated tests. Test manually by:
 
 **backend/main.py**:
 - `embedding_models`: Dict of 3 language-specific SentenceTransformer models (EN/FR/PT)
+- `tokenizers`: Dict of 3 HuggingFace tokenizers matching each embedding model
+- `chunkers`: Dict of 3 HybridChunker instances (one per language) for structure-aware chunking
 - `detect_language()`: Detects text language using langdetect, defaults to English
 - `translate_text()`: Translates between languages using deep-translator
-- `DocumentProcessor` class: Handles chunking, embedding, vector storage, stores document language
+- `DocumentProcessor` class: Handles HybridChunking, embedding, vector storage, stores document language
 - `generate_answer()`: Builds multilingual prompt and calls Gemini API with language instructions
 - API endpoints: `/upload`, `/ask`, `/clear`, `/api/health`
 - Static file serving: Mounts `../frontend` at root path
@@ -107,8 +111,7 @@ Currently no automated tests. Test manually by:
 **Constants** (backend/main.py):
 ```python
 MAX_PAGES = 20           # Page limit for documents
-CHUNK_SIZE = 1000        # Characters per chunk
-CHUNK_OVERLAP = 200      # Overlap between chunks
+MAX_TOKENS = 512         # Maximum tokens per chunk for HybridChunker
 ```
 
 **Supported languages** (backend/main.py):
@@ -120,13 +123,18 @@ SUPPORTED_LANGUAGES = {
 }
 ```
 
-**Embedding models** (backend/main.py):
+**Embedding models and chunkers** (backend/main.py):
 ```python
-embedding_models = {
-    'en': SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'),
-    'fr': SentenceTransformer('dangvantuan/sentence-camembert-large'),
-    'pt': SentenceTransformer('rufimelo/bert-large-portuguese-cased-sts')
+EMBEDDING_MODEL_IDS = {
+    'en': 'sentence-transformers/all-MiniLM-L6-v2',
+    'fr': 'dangvantuan/sentence-camembert-large',
+    'pt': 'rufimelo/bert-large-portuguese-cased-sts'
 }
+
+# Each language has matching embedding model, tokenizer, and HybridChunker
+embedding_models = {...}  # SentenceTransformer instances
+tokenizers = {...}        # HuggingFaceTokenizer instances
+chunkers = {...}          # HybridChunker instances
 # Models downloaded on first use (~1.5GB total)
 ```
 
@@ -159,7 +167,7 @@ port = int(os.getenv("PORT", 8001))
 
 8. **PDF Page Validation**: Uses pypdf to check page count before Docling processing. Non-PDF formats estimated at ~3000 chars per page.
 
-9. **Chunking Strategy**: Simple sliding window with sentence-aware breaking. Tries to break at period or newline if within second half of chunk (backend/main.py, `_chunk_text()`).
+9. **HybridChunker Strategy**: Uses Docling's HybridChunker for intelligent, structure-aware chunking. Respects document hierarchy (headings, sections, tables), uses language-specific tokenizers matching embedding models, merges small peer chunks with same headings (`merge_peers=True`), and ensures optimal semantic coherence (backend/main.py, `_chunk_with_hybrid_chunker()`).
 
 ## Deployment
 
@@ -197,8 +205,9 @@ docling-rag-webapp/
 ### Adding New Language Support
 
 1. Add language code to `SUPPORTED_LANGUAGES` dict (backend/main.py)
-2. Add corresponding embedding model to `embedding_models` dict (backend/main.py)
-3. Language detection and translation work automatically
+2. Add model ID to `EMBEDDING_MODEL_IDS` dict (backend/main.py)
+3. Corresponding embedding model, tokenizer, and chunker will be auto-initialized at startup
+4. Language detection and translation work automatically
 
 ### Changing Retrieval Parameters
 
