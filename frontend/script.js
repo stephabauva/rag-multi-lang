@@ -7,12 +7,14 @@ const translations = {
             getStarted: "Commencer"
         },
         hero: {
-            badge: "Propulsé par IA Avancée",
+            badge: "Propulsé par IA Avancée • Multilingue FR/EN/PT",
             title1: "Transformez vos documents en",
             title2: "Conversations Intelligentes",
             description: "Téléchargez n'importe quel document et posez des questions en langage naturel. Obtenez des réponses instantanées et précises grâce à une technologie IA de pointe.",
+            multilingualCompact: "Document dans UNE langue → Questions dans UNE AUTRE ?",
+            multilingualCheck: "Ça marche !",
             stat1: "Formats de fichiers",
-            stat2: "Pages max",
+            stat2: "Langues",
             stat3: "Temps de traitement"
         },
         upload: {
@@ -46,8 +48,8 @@ const translations = {
                 desc: "Support pour les documents PDF, Word, PowerPoint, Excel et HTML"
             },
             feature5: {
-                title: "Langage Naturel",
-                desc: "Posez vos questions en français simple, aucune compétence technique requise"
+                title: "Multilingue Intelligent",
+                desc: "Document en portugais mais vous parlez français ? Ou l'inverse ? Aucun problème ! Supporté : FR, EN, PT"
             },
             feature6: {
                 title: "Vérification des Sources",
@@ -111,12 +113,14 @@ const translations = {
             getStarted: "Get Started"
         },
         hero: {
-            badge: "Powered by Advanced AI",
+            badge: "Powered by Advanced AI • Multilingual FR/EN/PT",
             title1: "Transform Your Documents into",
             title2: "Intelligent Conversations",
             description: "Upload any document and ask questions in natural language. Get instant, accurate answers powered by cutting-edge AI technology.",
+            multilingualCompact: "Document in ONE language → Questions in ANOTHER?",
+            multilingualCheck: "It works!",
             stat1: "File Formats",
-            stat2: "Max Pages",
+            stat2: "Languages",
             stat3: "Processing Time"
         },
         upload: {
@@ -150,8 +154,8 @@ const translations = {
                 desc: "Support for PDF, Word, PowerPoint, Excel, and HTML documents"
             },
             feature5: {
-                title: "Natural Language",
-                desc: "Ask questions in plain English, no technical skills required"
+                title: "Smart Multilingual",
+                desc: "Document in Portuguese but you speak English? Or vice versa? No problem! Supported: FR, EN, PT"
             },
             feature6: {
                 title: "Source Verification",
@@ -215,12 +219,14 @@ const translations = {
             getStarted: "Começar"
         },
         hero: {
-            badge: "Powered by IA Avançada",
+            badge: "Powered by IA Avançada • Multilíngue FR/EN/PT",
             title1: "Transforme seus Documentos em",
             title2: "Conversas Inteligentes",
             description: "Carregue qualquer documento e faça perguntas em linguagem natural. Obtenha respostas instantâneas e precisas com tecnologia de IA de ponta.",
+            multilingualCompact: "Documento em UM idioma → Perguntas em OUTRO?",
+            multilingualCheck: "Funciona!",
             stat1: "Formatos de Arquivo",
-            stat2: "Páginas Máx",
+            stat2: "Idiomas",
             stat3: "Tempo de Processamento"
         },
         upload: {
@@ -254,8 +260,8 @@ const translations = {
                 desc: "Suporte para documentos PDF, Word, PowerPoint, Excel e HTML"
             },
             feature5: {
-                title: "Linguagem Natural",
-                desc: "Faça perguntas em português simples, sem habilidades técnicas necessárias"
+                title: "Multilíngue Inteligente",
+                desc: "Documento em francês mas você fala português? Ou vice-versa? Sem problema! Suportado: FR, EN, PT"
             },
             feature6: {
                 title: "Verificação de Fontes",
