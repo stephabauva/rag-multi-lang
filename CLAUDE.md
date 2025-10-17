@@ -62,7 +62,7 @@ Currently no automated tests. Test manually by:
 
 ### Request Flow
 
-1. **Document Upload** (`POST /upload` in backend/main.py):
+1. **Document Upload** in backend/main.py `POST /upload`:
    - User uploads document + API key via frontend
    - Backend validates file type and page limit (max 20 pages)
    - Docling converts document to structured DoclingDocument and markdown
@@ -73,7 +73,7 @@ Currently no automated tests. Test manually by:
    - Vectors stored in ChromaDB with session-specific collection
    - Response includes `document_language` and `language_name`
 
-2. **Question Answering** (`POST /ask` in backend/main.py):
+2. **Question Answering** in backend/main.py `POST /ask`:
    - Detect user question language using langdetect
    - If user language ≠ document language: translate question to document language
    - Embed translated query using document's language-specific model
@@ -84,8 +84,8 @@ Currently no automated tests. Test manually by:
 
 3. **Session Management**:
    - Single session per server (demo app constraint)
-   - Sessions stored in-memory dict: `sessions[session_id] = {processor, api_key, filename}`
-   - New upload clears ALL existing sessions (backend/main.py)
+   - Sessions stored in-memory dict in backend/main.py
+   - New upload clears ALL existing sessions
    - `/clear` endpoint deletes ChromaDB collection to prevent memory leaks
 
 ### Key Components
@@ -94,7 +94,7 @@ Currently no automated tests. Test manually by:
 - `embedding_models`: Dict of 3 language-specific SentenceTransformer models (EN/FR/PT) - lazy loaded
 - `tokenizers`: Dict of 3 HuggingFace tokenizers matching each embedding model - lazy loaded
 - `chunkers`: Dict of 3 HybridChunker instances (one per language) for structure-aware chunking - lazy loaded
-- `model_loading_status`: Dict tracking which models are loaded (used by `/api/model-status`)
+- `model_loading_status`: Dict tracking which models are loaded
 - `load_language_model()`: Lazy-loads model, tokenizer, and chunker for a specific language on-demand
 - `preload_models_background()`: Background task that pre-loads models in priority order (FR → EN → PT)
 - `detect_language()`: Detects text language using langdetect, defaults to English
@@ -108,17 +108,17 @@ Currently no automated tests. Test manually by:
 - State management: `sessionId`, `apiKey`
 - Event handlers: upload, send question, clear session
 - Message rendering: `addMessage()` with sources display
-- Model status polling: `checkModelStatus()` and `initializeModelStatus()` poll `/api/model-status` every 2s until models ready, disable upload button until at least one model is loaded
+- Model status polling: `checkModelStatus()` and `initializeModelStatus()` poll `/api/model-status` every 2s until models ready
 
 ### Configuration Points
 
-**Constants** (backend/main.py):
+**Constants** in backend/main.py:
 ```python
 MAX_PAGES = 20           # Page limit for documents
 MAX_TOKENS = 512         # Maximum tokens per chunk for HybridChunker
 ```
 
-**Supported languages** (backend/main.py):
+**Supported languages** in backend/main.py:
 ```python
 SUPPORTED_LANGUAGES = {
     'en': 'English',
@@ -127,7 +127,7 @@ SUPPORTED_LANGUAGES = {
 }
 ```
 
-**Embedding models and chunkers** (backend/main.py):
+**Embedding models and chunkers** in backend/main.py:
 ```python
 EMBEDDING_MODEL_IDS = {
     'en': 'sentence-transformers/all-MiniLM-L6-v2',
@@ -139,16 +139,14 @@ EMBEDDING_MODEL_IDS = {
 embedding_models = {...}  # SentenceTransformer instances
 tokenizers = {...}        # HuggingFaceTokenizer instances
 chunkers = {...}          # HybridChunker instances
-# Models downloaded on first use (~1.5GB total)
 ```
 
-**LLM model** (backend/main.py, `generate_answer()`):
+**LLM model** in backend/main.py `generate_answer()`:
 ```python
 model = genai.GenerativeModel('gemini-2.0-flash-exp')
-# Options: gemini-1.5-pro, gemini-1.5-flash
 ```
 
-**Server port** (backend/main.py):
+**Server port** in backend/main.py:
 ```python
 port = int(os.getenv("PORT", 8001))
 ```
@@ -159,9 +157,9 @@ port = int(os.getenv("PORT", 8001))
 
 2. **Language-Specific Embeddings**: Each language uses its own specialized embedding model for better semantic search quality. Models are stored in `embedding_models` dict.
 
-3. **Lazy Model Loading (Render Optimization)**: Models (~1.5GB total) load in background on startup in priority order (FR → EN → PT) to minimize cold start time. Server starts immediately (~45s on Render free tier) and UI becomes responsive while French model loads first (~10s). Models are lazy-loaded on-demand if accessed before background loading completes. Frontend polls `/api/model-status` and enables upload button when first model is ready. English model pre-downloaded in Docker build, FR/PT download on first run.
+3. **Lazy Model Loading**: Models (~1.5GB total) load in background on startup in priority order (FR → EN → PT) to minimize cold start time. Server starts immediately and UI becomes responsive while models load. Models are lazy-loaded on-demand if accessed before background loading completes. Frontend polls `/api/model-status` and enables upload button when first model is ready. English model pre-downloaded in Dockerfile (~80MB), FR/PT download on first use.
 
-4. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks (backend/main.py).
+4. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks.
 
 5. **In-Memory Storage**: All vector stores and sessions are ephemeral. Server restart = data loss. This is by design for demo simplicity.
 
@@ -171,15 +169,16 @@ port = int(os.getenv("PORT", 8001))
 
 8. **PDF Page Validation**: Uses pypdf to check page count before Docling processing. Non-PDF formats estimated at ~3000 chars per page.
 
-9. **HybridChunker Strategy**: Uses Docling's HybridChunker for intelligent, structure-aware chunking. Respects document hierarchy (headings, sections, tables), uses language-specific tokenizers matching embedding models, merges small peer chunks with same headings (`merge_peers=True`), and ensures optimal semantic coherence (backend/main.py, `_chunk_with_hybrid_chunker()`).
+9. **HybridChunker Strategy**: Uses Docling's HybridChunker for intelligent, structure-aware chunking. Respects document hierarchy (headings, sections, tables), uses language-specific tokenizers matching embedding models, merges small peer chunks with same headings (`merge_peers=True`), and ensures optimal semantic coherence in backend/main.py `_chunk_with_hybrid_chunker()`.
 
 ## Deployment
 
-**Render** (configured in `render.yaml`):
-- Build: `pip install -r requirements.txt`
-- Start: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-**Railway/Fly.io**: Standard Python app deployment, just ensure `PORT` env var is respected.
+**Hugging Face Spaces** (Docker mode):
+- Uses Dockerfile for deployment
+- Multi-stage build: Installs packages globally to /usr/local (accessible to non-root user)
+- Pre-caches English model (~80MB) to speed up initial startup
+- Container runs as UID 1000 (non-root user) for security
+- Environment variables: PORT (defaults to 7860)
 
 ## File Structure
 
@@ -192,9 +191,8 @@ docling-rag-webapp/
 │   ├── style.css            # Styling
 │   └── script.js            # Frontend logic, API calls
 ├── requirements.txt         # Python dependencies
-├── Dockerfile               # Container definition
+├── Dockerfile               # Container definition (Hugging Face Spaces)
 ├── docker-compose.yml       # Docker compose config
-├── render.yaml              # Render deployment config
 └── run.sh / run.bat         # Quick start scripts
 ```
 
@@ -202,27 +200,27 @@ docling-rag-webapp/
 
 ### Adding New Document Format Support
 
-1. Add extension to `allowed_extensions` list in `/upload` endpoint (backend/main.py)
+1. Add extension to `allowed_extensions` list in backend/main.py `/upload` endpoint
 2. Docling handles most formats automatically
 3. Consider page limit validation if not PDF
 
 ### Adding New Language Support
 
-1. Add language code to `SUPPORTED_LANGUAGES` dict (backend/main.py)
-2. Add model ID to `EMBEDDING_MODEL_IDS` dict (backend/main.py)
+1. Add language code to `SUPPORTED_LANGUAGES` dict in backend/main.py
+2. Add model ID to `EMBEDDING_MODEL_IDS` dict in backend/main.py
 3. Corresponding embedding model, tokenizer, and chunker will be auto-initialized at startup
 4. Language detection and translation work automatically
 
 ### Changing Retrieval Parameters
 
-Edit `search_similar()` call in `/ask` endpoint (backend/main.py):
+Edit `search_similar()` call in backend/main.py `/ask` endpoint:
 ```python
 context_chunks = processor.search_similar(search_query, top_k=3)  # Change top_k
 ```
 
 ### Modifying RAG Prompt
 
-Edit prompt template in `generate_answer()` function (backend/main.py). Note the language instructions are dynamically added based on `user_language` parameter.
+Edit prompt template in backend/main.py `generate_answer()` function. Note the language instructions are dynamically added based on `user_language` parameter.
 
 ### Adding Session Persistence
 
@@ -230,4 +228,4 @@ Would require:
 1. Replace in-memory `sessions` dict with database
 2. Persist ChromaDB collections (switch from in-memory to persistent client)
 3. Store API keys securely (encrypted)
-4. Modify `/upload` endpoint to NOT clear all sessions
+4. Modify backend/main.py `/upload` endpoint to NOT clear all sessions
