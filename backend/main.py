@@ -9,7 +9,6 @@ import uuid
 import warnings
 import asyncio
 import json
-from collections import defaultdict
 import time
 
 # Suppress ChromaDB telemetry warnings
@@ -50,8 +49,8 @@ app.add_middleware(
 # In-memory storage for sessions
 sessions = {}
 
-# Progress tracking for real-time updates
-progress_queues = defaultdict(asyncio.Queue)
+# Progress tracking for real-time updates (queues created explicitly per session)
+progress_queues = {}
 
 # Language code mapping (Docling uses ISO 639-1, langdetect returns similar codes)
 SUPPORTED_LANGUAGES = {
@@ -498,6 +497,9 @@ async def upload_document(
     # Create session
     session_id = str(uuid.uuid4())
 
+    # Create progress queue for this session (must be in async context)
+    progress_queues[session_id] = asyncio.Queue()
+
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
         content = await file.read()
@@ -513,7 +515,16 @@ async def upload_document(
 
         try:
             processor = DocumentProcessor(session_id)
-            result = processor.process_document(tmp_file_path, file_extension)
+
+            # Run blocking document processing in thread pool to avoid blocking event loop
+            # This allows SSE messages to be sent while Docling downloads models
+            loop = asyncio.get_running_loop()
+            result = await loop.run_in_executor(
+                None,  # Use default ThreadPoolExecutor
+                processor.process_document,
+                tmp_file_path,
+                file_extension
+            )
 
             # Store session with timestamp
             sessions[session_id] = {
