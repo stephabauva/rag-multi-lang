@@ -230,6 +230,16 @@ async def upload_document(
             detail=f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}"
         )
 
+    # Clean up ALL existing sessions before creating new one (demo app - single session only)
+    for sid in list(sessions.keys()):
+        try:
+            processor = sessions[sid]["processor"]
+            collection_name = f"docs_{sid}"
+            processor.chroma_client.delete_collection(collection_name)
+        except Exception:
+            pass  # Collection might not exist
+        del sessions[sid]
+
     # Create session
     session_id = str(uuid.uuid4())
 
@@ -304,6 +314,17 @@ async def ask_question(
 async def clear_session(session_id: str = Form(...)):
     """Clear a session"""
     if session_id in sessions:
+        # Get the processor to access ChromaDB collection
+        processor = sessions[session_id]["processor"]
+
+        # Delete ChromaDB collection to prevent memory leak
+        try:
+            collection_name = f"docs_{session_id}"
+            processor.chroma_client.delete_collection(collection_name)
+        except Exception:
+            pass  # Collection might not exist if document wasn't processed
+
+        # Delete session
         del sessions[session_id]
         return {"status": "success", "message": "Session cleared"}
     else:
