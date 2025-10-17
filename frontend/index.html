@@ -27,9 +27,14 @@
                 <span class="logo-text">IntelliDoc<span class="ai-badge">AI</span></span>
             </div>
             <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How It Works</a>
-                <a href="#get-started" class="nav-cta">Get Started</a>
+                <div class="language-toggle">
+                    <button class="lang-btn active" data-lang="fr">FR</button>
+                    <button class="lang-btn" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="pt">PT</button>
+                </div>
+                <a href="#features" data-i18n="nav.features">Fonctionnalités</a>
+                <a href="#how-it-works" data-i18n="nav.howItWorks">Comment ça marche</a>
+                <a href="#get-started" class="nav-cta" data-i18n="nav.getStarted">Commencer</a>
             </div>
         </div>
     </nav>
@@ -38,22 +43,22 @@
     <section class="hero" id="get-started">
         <div class="hero-container">
             <div class="hero-content">
-                <div class="badge">Powered by Advanced AI</div>
-                <h1 class="hero-title">Transform Your Documents into<br><span class="gradient-text">Intelligent Conversations</span></h1>
-                <p class="hero-description">Upload any document and ask questions in natural language. Get instant, accurate answers powered by cutting-edge AI technology.</p>
+                <div class="badge" data-i18n="hero.badge">Propulsé par IA Avancée</div>
+                <h1 class="hero-title"><span data-i18n="hero.title1">Transformez vos documents en</span><br><span class="gradient-text" data-i18n="hero.title2">Conversations Intelligentes</span></h1>
+                <p class="hero-description" data-i18n="hero.description">Téléchargez n'importe quel document et posez des questions en langage naturel. Obtenez des réponses instantanées et précises grâce à une technologie IA de pointe.</p>
 
                 <div class="stats">
                     <div class="stat-item">
                         <div class="stat-number">5+</div>
-                        <div class="stat-label">File Formats</div>
+                        <div class="stat-label" data-i18n="hero.stat1">Formats de fichiers</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">20</div>
-                        <div class="stat-label">Max Pages</div>
+                        <div class="stat-label" data-i18n="hero.stat2">Pages max</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">&lt;30s</div>
-                        <div class="stat-label">Processing Time</div>
+                        <div class="stat-label" data-i18n="hero.stat3">Temps de traitement</div>
                     </div>
                 </div>
             </div>
@@ -61,8 +66,8 @@
             <!-- Upload Card -->
             <div class="upload-card" id="uploadCard">
                 <div class="card-header">
-                    <h3>Start Analyzing</h3>
-                    <p>Upload your document to begin</p>
+                    <h3 data-i18n="upload.title">Commencer l'Analyse</h3>
+                    <p data-i18n="upload.subtitle">Téléchargez votre document pour commencer</p>
                 </div>
 
                 <div class="form-group">
@@ -70,15 +75,16 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M8 0a3 3 0 013 3v1h1a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h1V3a3 3 0 013-3zm0 2a1 1 0 00-1 1v1h2V3a1 1 0 00-1-1z"/>
                         </svg>
-                        Google Gemini API Key
+                        <span data-i18n="upload.apiKeyLabel">Clé API Google Gemini</span>
                     </label>
                     <input
                         type="password"
                         id="apiKey"
-                        placeholder="Enter your API key"
+                        data-i18n-placeholder="upload.apiKeyPlaceholder"
+                        placeholder="Entrez votre clé API"
                         class="input-field"
                     >
-                    <small class="help-text">Get your free API key at <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></small>
+                    <small class="help-text"><span data-i18n="upload.apiKeyHelp1">Obtenez votre clé API gratuite sur</span> <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a></small>
                 </div>
 
                 <div class="form-group">
@@ -86,7 +92,7 @@
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                             <path d="M4 0h8a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V2a2 2 0 012-2zm1 4v1h6V4H5zm0 3v1h6V7H5zm0 3v1h4v-1H5z"/>
                         </svg>
-                        Select Document
+                        <span data-i18n="upload.documentLabel">Sélectionner un document</span>
                     </label>
                     <div class="file-upload-wrapper">
                         <input
@@ -99,17 +105,17 @@
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z"/>
                             </svg>
-                            <span id="fileName">Click to browse or drag & drop</span>
+                            <span id="fileName" data-i18n="upload.filePrompt">Cliquez pour parcourir ou glissez-déposez</span>
                         </label>
                     </div>
-                    <small class="help-text">Supported: PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)</small>
+                    <small class="help-text" data-i18n="upload.fileHelp">Formats supportés : PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)</small>
                 </div>
 
                 <button id="uploadBtn" class="btn-primary">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M13 8V2H7v6H2l8 8 8-8h-5zM0 18h20v2H0v-2z"/>
                     </svg>
-                    Process Document
+                    <span data-i18n="upload.processBtn">Traiter le document</span>
                 </button>
 
                 <div id="uploadStatus" class="status-message"></div>
@@ -121,8 +127,8 @@
     <section class="features" id="features">
         <div class="section-container">
             <div class="section-header">
-                <h2>Why Choose IntelliDoc AI?</h2>
-                <p>Enterprise-grade document intelligence at your fingertips</p>
+                <h2 data-i18n="features.title">Pourquoi choisir IntelliDoc AI ?</h2>
+                <p data-i18n="features.subtitle">Intelligence documentaire de niveau entreprise à portée de main</p>
             </div>
 
             <div class="features-grid">
@@ -132,8 +138,8 @@
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                         </svg>
                     </div>
-                    <h3>Lightning Fast</h3>
-                    <p>Process documents in seconds with our optimized AI pipeline</p>
+                    <h3 data-i18n="features.feature1.title">Ultra Rapide</h3>
+                    <p data-i18n="features.feature1.desc">Traitez vos documents en quelques secondes grâce à notre pipeline IA optimisé</p>
                 </div>
 
                 <div class="feature-card">
@@ -142,8 +148,8 @@
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
                     </div>
-                    <h3>Secure & Private</h3>
-                    <p>Your data stays private. No storage, no tracking, complete confidentiality</p>
+                    <h3 data-i18n="features.feature2.title">Sécurisé et Privé</h3>
+                    <p data-i18n="features.feature2.desc">Vos données restent privées. Aucun stockage, aucun suivi, confidentialité totale</p>
                 </div>
 
                 <div class="feature-card">
@@ -154,8 +160,8 @@
                             <circle cx="12" cy="17" r="1"/>
                         </svg>
                     </div>
-                    <h3>Smart Answers</h3>
-                    <p>Get accurate, contextual answers with source citations</p>
+                    <h3 data-i18n="features.feature3.title">Réponses Intelligentes</h3>
+                    <p data-i18n="features.feature3.desc">Obtenez des réponses précises et contextuelles avec citations des sources</p>
                 </div>
 
                 <div class="feature-card">
@@ -168,8 +174,8 @@
                             <path d="M10 9H8"/>
                         </svg>
                     </div>
-                    <h3>Multi-Format</h3>
-                    <p>Support for PDF, Word, PowerPoint, Excel, and HTML documents</p>
+                    <h3 data-i18n="features.feature4.title">Multi-Format</h3>
+                    <p data-i18n="features.feature4.desc">Support pour les documents PDF, Word, PowerPoint, Excel et HTML</p>
                 </div>
 
                 <div class="feature-card">
@@ -178,8 +184,8 @@
                             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
                         </svg>
                     </div>
-                    <h3>Natural Language</h3>
-                    <p>Ask questions in plain English, no technical skills required</p>
+                    <h3 data-i18n="features.feature5.title">Langage Naturel</h3>
+                    <p data-i18n="features.feature5.desc">Posez vos questions en français simple, aucune compétence technique requise</p>
                 </div>
 
                 <div class="feature-card">
@@ -189,8 +195,8 @@
                             <polyline points="22 4 12 14.01 9 11.01"/>
                         </svg>
                     </div>
-                    <h3>Source Verification</h3>
-                    <p>Every answer includes references to the original document</p>
+                    <h3 data-i18n="features.feature6.title">Vérification des Sources</h3>
+                    <p data-i18n="features.feature6.desc">Chaque réponse inclut des références au document original</p>
                 </div>
             </div>
         </div>
@@ -200,32 +206,32 @@
     <section class="how-it-works" id="how-it-works">
         <div class="section-container">
             <div class="section-header">
-                <h2>How It Works</h2>
-                <p>Three simple steps to intelligent document analysis</p>
+                <h2 data-i18n="howItWorks.title">Comment ça marche</h2>
+                <p data-i18n="howItWorks.subtitle">Trois étapes simples pour analyser vos documents intelligemment</p>
             </div>
 
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>Upload Document</h3>
-                        <p>Simply drag and drop or select your document. We support all major formats.</p>
+                        <h3 data-i18n="howItWorks.step1.title">Télécharger le document</h3>
+                        <p data-i18n="howItWorks.step1.desc">Glissez-déposez simplement ou sélectionnez votre document. Nous supportons tous les formats courants.</p>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>AI Processing</h3>
-                        <p>Our advanced AI analyzes your document, understanding context and structure.</p>
+                        <h3 data-i18n="howItWorks.step2.title">Traitement IA</h3>
+                        <p data-i18n="howItWorks.step2.desc">Notre IA avancée analyse votre document en comprenant le contexte et la structure.</p>
                     </div>
                 </div>
 
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <h3>Ask & Get Answers</h3>
-                        <p>Start conversing with your document. Get instant, accurate insights.</p>
+                        <h3 data-i18n="howItWorks.step3.title">Posez vos questions</h3>
+                        <p data-i18n="howItWorks.step3.desc">Commencez à converser avec votre document. Obtenez des informations instantanées et précises.</p>
                     </div>
                 </div>
             </div>
@@ -239,8 +245,8 @@
                 <div class="chat-header-left">
                     <div class="status-indicator"></div>
                     <div>
-                        <h3 id="documentName">Document Analysis</h3>
-                        <p class="chat-subtitle">Ask anything about your document</p>
+                        <h3 id="documentName" data-i18n="chat.title">Analyse du document</h3>
+                        <p class="chat-subtitle" data-i18n="chat.subtitle">Posez n'importe quelle question sur votre document</p>
                     </div>
                 </div>
                 <div class="chat-header-actions">
@@ -248,7 +254,7 @@
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/>
                         </svg>
-                        New Document
+                        <span data-i18n="chat.newDocument">Nouveau document</span>
                     </button>
                 </div>
             </div>
@@ -267,14 +273,14 @@
                             </defs>
                         </svg>
                     </div>
-                    <h3>Document Ready!</h3>
-                    <p>Your document has been processed. Start asking questions below.</p>
+                    <h3 data-i18n="chat.ready">Document prêt !</h3>
+                    <p data-i18n="chat.readyDesc">Votre document a été traité. Commencez à poser vos questions ci-dessous.</p>
                     <div class="example-questions">
-                        <p class="example-label">Try asking:</p>
+                        <p class="example-label" data-i18n="chat.tryAsking">Essayez de demander :</p>
                         <div class="example-chips">
-                            <span class="chip">"What is this document about?"</span>
-                            <span class="chip">"Summarize the main points"</span>
-                            <span class="chip">"What are the key findings?"</span>
+                            <span class="chip" data-i18n="chat.example1">"De quoi parle ce document ?"</span>
+                            <span class="chip" data-i18n="chat.example2">"Résumez les points principaux"</span>
+                            <span class="chip" data-i18n="chat.example3">"Quelles sont les conclusions clés ?"</span>
                         </div>
                     </div>
                 </div>
@@ -285,7 +291,8 @@
                     <input
                         type="text"
                         id="questionInput"
-                        placeholder="Ask a question about your document..."
+                        data-i18n-placeholder="chat.inputPlaceholder"
+                        placeholder="Posez une question sur votre document..."
                         class="chat-input"
                     >
                     <button id="sendBtn" class="btn-send">
@@ -294,7 +301,7 @@
                         </svg>
                     </button>
                 </div>
-                <p class="input-hint">Press Enter to send • AI-powered by Google Gemini</p>
+                <p class="input-hint" data-i18n="chat.inputHint">Appuyez sur Entrée pour envoyer • Propulsé par Google Gemini</p>
             </div>
         </div>
     </div>
@@ -303,7 +310,7 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="spinner"></div>
-            <p id="loadingText">Processing...</p>
+            <p id="loadingText" data-i18n="loading.text">Traitement en cours...</p>
         </div>
     </div>
 
@@ -324,8 +331,8 @@
                     </svg>
                     <span>IntelliDoc AI</span>
                 </div>
-                <p class="footer-text">Transform your documents into intelligent conversations</p>
-                <p class="footer-copyright">&copy; 2025 IntelliDoc AI. Powered by Docling & Google Gemini.</p>
+                <p class="footer-text" data-i18n="footer.tagline">Transformez vos documents en conversations intelligentes</p>
+                <p class="footer-copyright" data-i18n="footer.copyright">&copy; 2025 IntelliDoc AI. Propulsé par Docling & Google Gemini.</p>
             </div>
         </div>
     </footer>

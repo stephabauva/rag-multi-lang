@@ -1,3 +1,322 @@
+// Translations
+const translations = {
+    fr: {
+        nav: {
+            features: "Fonctionnalités",
+            howItWorks: "Comment ça marche",
+            getStarted: "Commencer"
+        },
+        hero: {
+            badge: "Propulsé par IA Avancée",
+            title1: "Transformez vos documents en",
+            title2: "Conversations Intelligentes",
+            description: "Téléchargez n'importe quel document et posez des questions en langage naturel. Obtenez des réponses instantanées et précises grâce à une technologie IA de pointe.",
+            stat1: "Formats de fichiers",
+            stat2: "Pages max",
+            stat3: "Temps de traitement"
+        },
+        upload: {
+            title: "Commencer l'Analyse",
+            subtitle: "Téléchargez votre document pour commencer",
+            apiKeyLabel: "Clé API Google Gemini",
+            apiKeyPlaceholder: "Entrez votre clé API",
+            apiKeyHelp1: "Obtenez votre clé API gratuite sur",
+            documentLabel: "Sélectionner un document",
+            filePrompt: "Cliquez pour parcourir ou glissez-déposez",
+            fileHelp: "Formats supportés : PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)",
+            processBtn: "Traiter le document"
+        },
+        features: {
+            title: "Pourquoi choisir IntelliDoc AI ?",
+            subtitle: "Intelligence documentaire de niveau entreprise à portée de main",
+            feature1: {
+                title: "Ultra Rapide",
+                desc: "Traitez vos documents en quelques secondes grâce à notre pipeline IA optimisé"
+            },
+            feature2: {
+                title: "Sécurisé et Privé",
+                desc: "Vos données restent privées. Aucun stockage, aucun suivi, confidentialité totale"
+            },
+            feature3: {
+                title: "Réponses Intelligentes",
+                desc: "Obtenez des réponses précises et contextuelles avec citations des sources"
+            },
+            feature4: {
+                title: "Multi-Format",
+                desc: "Support pour les documents PDF, Word, PowerPoint, Excel et HTML"
+            },
+            feature5: {
+                title: "Langage Naturel",
+                desc: "Posez vos questions en français simple, aucune compétence technique requise"
+            },
+            feature6: {
+                title: "Vérification des Sources",
+                desc: "Chaque réponse inclut des références au document original"
+            }
+        },
+        howItWorks: {
+            title: "Comment ça marche",
+            subtitle: "Trois étapes simples pour analyser vos documents intelligemment",
+            step1: {
+                title: "Télécharger le document",
+                desc: "Glissez-déposez simplement ou sélectionnez votre document. Nous supportons tous les formats courants."
+            },
+            step2: {
+                title: "Traitement IA",
+                desc: "Notre IA avancée analyse votre document en comprenant le contexte et la structure."
+            },
+            step3: {
+                title: "Posez vos questions",
+                desc: "Commencez à converser avec votre document. Obtenez des informations instantanées et précises."
+            }
+        },
+        chat: {
+            title: "Analyse du document",
+            subtitle: "Posez n'importe quelle question sur votre document",
+            newDocument: "Nouveau document",
+            ready: "Document prêt !",
+            readyDesc: "Votre document a été traité. Commencez à poser vos questions ci-dessous.",
+            tryAsking: "Essayez de demander :",
+            example1: "\"De quoi parle ce document ?\"",
+            example2: "\"Résumez les points principaux\"",
+            example3: "\"Quelles sont les conclusions clés ?\"",
+            inputPlaceholder: "Posez une question sur votre document...",
+            inputHint: "Appuyez sur Entrée pour envoyer • Propulsé par Google Gemini",
+            you: "Vous",
+            ai: "IntelliDoc AI",
+            sources: "Références Sources"
+        },
+        loading: {
+            text: "Traitement en cours...",
+            processing: "Traitement de votre document..."
+        },
+        footer: {
+            tagline: "Transformez vos documents en conversations intelligentes",
+            copyright: "© 2025 IntelliDoc AI. Propulsé par Docling & Google Gemini."
+        },
+        messages: {
+            apiKeyRequired: "Veuillez entrer votre clé API Google Gemini",
+            fileRequired: "Veuillez sélectionner un fichier",
+            fileTooLarge: "Fichier trop volumineux. Taille maximale : 50Mo",
+            uploadFailed: "Échec du téléchargement",
+            answerFailed: "Échec de l'obtention de la réponse",
+            error: "Erreur",
+            clearConfirm: "Démarrer une nouvelle conversation ? Cela effacera le document actuel."
+        }
+    },
+    en: {
+        nav: {
+            features: "Features",
+            howItWorks: "How It Works",
+            getStarted: "Get Started"
+        },
+        hero: {
+            badge: "Powered by Advanced AI",
+            title1: "Transform Your Documents into",
+            title2: "Intelligent Conversations",
+            description: "Upload any document and ask questions in natural language. Get instant, accurate answers powered by cutting-edge AI technology.",
+            stat1: "File Formats",
+            stat2: "Max Pages",
+            stat3: "Processing Time"
+        },
+        upload: {
+            title: "Start Analyzing",
+            subtitle: "Upload your document to begin",
+            apiKeyLabel: "Google Gemini API Key",
+            apiKeyPlaceholder: "Enter your API key",
+            apiKeyHelp1: "Get your free API key at",
+            documentLabel: "Select Document",
+            filePrompt: "Click to browse or drag & drop",
+            fileHelp: "Supported: PDF, DOCX, PPTX, XLSX, HTML (Max 20 pages)",
+            processBtn: "Process Document"
+        },
+        features: {
+            title: "Why Choose IntelliDoc AI?",
+            subtitle: "Enterprise-grade document intelligence at your fingertips",
+            feature1: {
+                title: "Lightning Fast",
+                desc: "Process documents in seconds with our optimized AI pipeline"
+            },
+            feature2: {
+                title: "Secure & Private",
+                desc: "Your data stays private. No storage, no tracking, complete confidentiality"
+            },
+            feature3: {
+                title: "Smart Answers",
+                desc: "Get accurate, contextual answers with source citations"
+            },
+            feature4: {
+                title: "Multi-Format",
+                desc: "Support for PDF, Word, PowerPoint, Excel, and HTML documents"
+            },
+            feature5: {
+                title: "Natural Language",
+                desc: "Ask questions in plain English, no technical skills required"
+            },
+            feature6: {
+                title: "Source Verification",
+                desc: "Every answer includes references to the original document"
+            }
+        },
+        howItWorks: {
+            title: "How It Works",
+            subtitle: "Three simple steps to intelligent document analysis",
+            step1: {
+                title: "Upload Document",
+                desc: "Simply drag and drop or select your document. We support all major formats."
+            },
+            step2: {
+                title: "AI Processing",
+                desc: "Our advanced AI analyzes your document, understanding context and structure."
+            },
+            step3: {
+                title: "Ask & Get Answers",
+                desc: "Start conversing with your document. Get instant, accurate insights."
+            }
+        },
+        chat: {
+            title: "Document Analysis",
+            subtitle: "Ask anything about your document",
+            newDocument: "New Document",
+            ready: "Document Ready!",
+            readyDesc: "Your document has been processed. Start asking questions below.",
+            tryAsking: "Try asking:",
+            example1: "\"What is this document about?\"",
+            example2: "\"Summarize the main points\"",
+            example3: "\"What are the key findings?\"",
+            inputPlaceholder: "Ask a question about your document...",
+            inputHint: "Press Enter to send • AI-powered by Google Gemini",
+            you: "You",
+            ai: "IntelliDoc AI",
+            sources: "Source References"
+        },
+        loading: {
+            text: "Processing...",
+            processing: "Processing your document..."
+        },
+        footer: {
+            tagline: "Transform your documents into intelligent conversations",
+            copyright: "© 2025 IntelliDoc AI. Powered by Docling & Google Gemini."
+        },
+        messages: {
+            apiKeyRequired: "Please enter your Google Gemini API key",
+            fileRequired: "Please select a file",
+            fileTooLarge: "File too large. Maximum size: 50MB",
+            uploadFailed: "Upload failed",
+            answerFailed: "Failed to get answer",
+            error: "Error",
+            clearConfirm: "Start a new conversation? This will clear the current document."
+        }
+    },
+    pt: {
+        nav: {
+            features: "Recursos",
+            howItWorks: "Como Funciona",
+            getStarted: "Começar"
+        },
+        hero: {
+            badge: "Powered by IA Avançada",
+            title1: "Transforme seus Documentos em",
+            title2: "Conversas Inteligentes",
+            description: "Carregue qualquer documento e faça perguntas em linguagem natural. Obtenha respostas instantâneas e precisas com tecnologia de IA de ponta.",
+            stat1: "Formatos de Arquivo",
+            stat2: "Páginas Máx",
+            stat3: "Tempo de Processamento"
+        },
+        upload: {
+            title: "Começar Análise",
+            subtitle: "Carregue seu documento para começar",
+            apiKeyLabel: "Chave API Google Gemini",
+            apiKeyPlaceholder: "Digite sua chave API",
+            apiKeyHelp1: "Obtenha sua chave API gratuita em",
+            documentLabel: "Selecionar Documento",
+            filePrompt: "Clique para procurar ou arraste e solte",
+            fileHelp: "Suportados: PDF, DOCX, PPTX, XLSX, HTML (Máx 20 páginas)",
+            processBtn: "Processar Documento"
+        },
+        features: {
+            title: "Por que escolher IntelliDoc AI?",
+            subtitle: "Inteligência documental de nível empresarial ao seu alcance",
+            feature1: {
+                title: "Ultra Rápido",
+                desc: "Processe documentos em segundos com nosso pipeline de IA otimizado"
+            },
+            feature2: {
+                title: "Seguro e Privado",
+                desc: "Seus dados permanecem privados. Sem armazenamento, sem rastreamento, confidencialidade total"
+            },
+            feature3: {
+                title: "Respostas Inteligentes",
+                desc: "Obtenha respostas precisas e contextuais com citações de fontes"
+            },
+            feature4: {
+                title: "Multi-Formato",
+                desc: "Suporte para documentos PDF, Word, PowerPoint, Excel e HTML"
+            },
+            feature5: {
+                title: "Linguagem Natural",
+                desc: "Faça perguntas em português simples, sem habilidades técnicas necessárias"
+            },
+            feature6: {
+                title: "Verificação de Fontes",
+                desc: "Cada resposta inclui referências ao documento original"
+            }
+        },
+        howItWorks: {
+            title: "Como Funciona",
+            subtitle: "Três passos simples para análise inteligente de documentos",
+            step1: {
+                title: "Carregar Documento",
+                desc: "Simplesmente arraste e solte ou selecione seu documento. Suportamos todos os principais formatos."
+            },
+            step2: {
+                title: "Processamento IA",
+                desc: "Nossa IA avançada analisa seu documento, compreendendo o contexto e a estrutura."
+            },
+            step3: {
+                title: "Pergunte e Obtenha Respostas",
+                desc: "Comece a conversar com seu documento. Obtenha insights instantâneos e precisos."
+            }
+        },
+        chat: {
+            title: "Análise do Documento",
+            subtitle: "Pergunte qualquer coisa sobre seu documento",
+            newDocument: "Novo Documento",
+            ready: "Documento Pronto!",
+            readyDesc: "Seu documento foi processado. Comece a fazer perguntas abaixo.",
+            tryAsking: "Experimente perguntar:",
+            example1: "\"Sobre o que é este documento?\"",
+            example2: "\"Resuma os pontos principais\"",
+            example3: "\"Quais são as descobertas chave?\"",
+            inputPlaceholder: "Faça uma pergunta sobre seu documento...",
+            inputHint: "Pressione Enter para enviar • Powered by Google Gemini",
+            you: "Você",
+            ai: "IntelliDoc AI",
+            sources: "Referências de Fontes"
+        },
+        loading: {
+            text: "Processando...",
+            processing: "Processando seu documento..."
+        },
+        footer: {
+            tagline: "Transforme seus documentos em conversas inteligentes",
+            copyright: "© 2025 IntelliDoc AI. Powered by Docling & Google Gemini."
+        },
+        messages: {
+            apiKeyRequired: "Por favor, digite sua chave API Google Gemini",
+            fileRequired: "Por favor, selecione um arquivo",
+            fileTooLarge: "Arquivo muito grande. Tamanho máximo: 50MB",
+            uploadFailed: "Falha no upload",
+            answerFailed: "Falha ao obter resposta",
+            error: "Erro",
+            clearConfirm: "Iniciar uma nova conversa? Isso limpará o documento atual."
+        }
+    }
+};
+
+// Current language (default: French)
+let currentLanguage = localStorage.getItem('language') || 'fr';
+
 // State
 let sessionId = null;
 let apiKey = null;
@@ -21,10 +340,61 @@ const fileNameSpan = document.getElementById('fileName');
 // API Base URL
 const API_BASE = window.location.origin;
 
+// Translation functions
+function getNestedTranslation(key) {
+    const keys = key.split('.');
+    let value = translations[currentLanguage];
+
+    for (const k of keys) {
+        if (value && typeof value === 'object') {
+            value = value[k];
+        } else {
+            return key; // Return key if translation not found
+        }
+    }
+
+    return value || key;
+}
+
+function updatePageLanguage() {
+    // Update all elements with data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.getAttribute('data-i18n');
+        element.textContent = getNestedTranslation(key);
+    });
+
+    // Update placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-i18n-placeholder');
+        element.placeholder = getNestedTranslation(key);
+    });
+
+    // Update language toggle buttons
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-lang') === currentLanguage) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+function switchLanguage(lang) {
+    currentLanguage = lang;
+    localStorage.setItem('language', lang);
+    updatePageLanguage();
+}
+
 // Event Listeners
 uploadBtn.addEventListener('click', handleUpload);
 sendBtn.addEventListener('click', handleSendQuestion);
 clearBtn.addEventListener('click', handleClear);
+
+// Language toggle listeners
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        switchLanguage(btn.getAttribute('data-lang'));
+    });
+});
 
 questionInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -39,13 +409,13 @@ fileInput.addEventListener('change', (e) => {
     if (file) {
         fileNameSpan.textContent = file.name;
     } else {
-        fileNameSpan.textContent = 'Click to browse or drag & drop';
+        fileNameSpan.textContent = getNestedTranslation('upload.filePrompt');
     }
 });
 
 // Show loading overlay
-function showLoading(message = 'Processing...') {
-    loadingText.textContent = message;
+function showLoading(message = null) {
+    loadingText.textContent = message || getNestedTranslation('loading.text');
     loadingOverlay.classList.add('active');
 }
 
@@ -72,23 +442,23 @@ async function handleUpload() {
 
     // Validation
     if (!apiKey) {
-        showStatus('Please enter your Google Gemini API key', 'error');
+        showStatus(getNestedTranslation('messages.apiKeyRequired'), 'error');
         return;
     }
 
     if (!file) {
-        showStatus('Please select a file', 'error');
+        showStatus(getNestedTranslation('messages.fileRequired'), 'error');
         return;
     }
 
     // Check file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
-        showStatus('File too large. Maximum size: 50MB', 'error');
+        showStatus(getNestedTranslation('messages.fileTooLarge'), 'error');
         return;
     }
 
     try {
-        showLoading('Processing your document...');
+        showLoading(getNestedTranslation('loading.processing'));
         hideStatus();
 
         // Create FormData
@@ -168,7 +538,7 @@ async function handleSendQuestion() {
 
     } catch (error) {
         console.error('Question error:', error);
-        addMessage('assistant', `Error: ${error.message}`, []);
+        addMessage('assistant', `${getNestedTranslation('messages.error')}: ${error.message}`, []);
     } finally {
         // Re-enable input
         questionInput.disabled = false;
@@ -196,7 +566,7 @@ function addMessage(role, content, sources = null) {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm0 2c-4 0-6 2-6 4v2h12v-2c0-2-2-4-6-4z"/>
             </svg>
-            You
+            ${getNestedTranslation('chat.you')}
         `;
     } else {
         header.innerHTML = `
@@ -204,7 +574,7 @@ function addMessage(role, content, sources = null) {
                 <path d="M8 0a8 8 0 108 8 8 8 0 00-8-8zm0 14a6 6 0 116-6 6 6 0 01-6 6z"/>
                 <path d="M6.5 7a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zm3 0a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5z"/>
             </svg>
-            IntelliDoc AI
+            ${getNestedTranslation('chat.ai')}
         `;
     }
 
@@ -227,7 +597,7 @@ function addMessage(role, content, sources = null) {
                 <path d="M9 4H5a1 1 0 000 2h4a1 1 0 000-2zM9 7H5a1 1 0 000 2h4a1 1 0 000-2z"/>
                 <path d="M11 0H3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V2a2 2 0 00-2-2zm0 12H3V2h8v10z"/>
             </svg>
-            Source References
+            ${getNestedTranslation('chat.sources')}
         `;
         sourcesDiv.appendChild(sourcesHeader);
 
@@ -249,7 +619,7 @@ function addMessage(role, content, sources = null) {
 
 // Handle clear
 async function handleClear() {
-    if (!confirm('Start a new conversation? This will clear the current document.')) {
+    if (!confirm(getNestedTranslation('messages.clearConfirm'))) {
         return;
     }
 
@@ -283,21 +653,21 @@ async function handleClear() {
                         </defs>
                     </svg>
                 </div>
-                <h3>Document Ready!</h3>
-                <p>Your document has been processed. Start asking questions below.</p>
+                <h3 data-i18n="chat.ready">${getNestedTranslation('chat.ready')}</h3>
+                <p data-i18n="chat.readyDesc">${getNestedTranslation('chat.readyDesc')}</p>
                 <div class="example-questions">
-                    <p class="example-label">Try asking:</p>
+                    <p class="example-label" data-i18n="chat.tryAsking">${getNestedTranslation('chat.tryAsking')}</p>
                     <div class="example-chips">
-                        <span class="chip">"What is this document about?"</span>
-                        <span class="chip">"Summarize the main points"</span>
-                        <span class="chip">"What are the key findings?"</span>
+                        <span class="chip" data-i18n="chat.example1">${getNestedTranslation('chat.example1')}</span>
+                        <span class="chip" data-i18n="chat.example2">${getNestedTranslation('chat.example2')}</span>
+                        <span class="chip" data-i18n="chat.example3">${getNestedTranslation('chat.example3')}</span>
                     </div>
                 </div>
             </div>
         `;
         questionInput.value = '';
         fileInput.value = '';
-        fileNameSpan.textContent = 'Click to browse or drag & drop';
+        fileNameSpan.textContent = getNestedTranslation('upload.filePrompt');
         apiKeyInput.value = '';
         chatOverlay.classList.remove('active');
         hideStatus();
@@ -317,3 +687,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
+// Initialize language on page load
+updatePageLanguage();
