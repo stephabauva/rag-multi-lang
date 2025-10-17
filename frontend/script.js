@@ -812,7 +812,7 @@ async function checkModelStatus() {
         if (data.any_loaded) {
             // At least one model is loaded, enable upload button
             uploadBtn.disabled = false;
-            uploadBtn.textContent = t.upload.processBtn;
+            uploadBtn.textContent = translations[currentLanguage].upload.processBtn;
             // Remove loading banner if it exists
             if (existingBanner) {
                 existingBanner.remove();
@@ -832,7 +832,7 @@ async function checkModelStatus() {
         }
     } catch (error) {
         // If can't reach server yet, keep polling
-        console.log('Waiting for server...');
+        console.log('Waiting for server...', error);
         uploadBtn.disabled = true;
         uploadBtn.textContent = "⏳ Connecting...";
         return false;
