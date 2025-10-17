@@ -8,9 +8,14 @@ A RAG (Retrieval-Augmented Generation) demo application that processes documents
 
 **Tech Stack:**
 - **Backend**: FastAPI (Python 3.9+)
-- **Document Processing**: Docling (converts PDF/DOCX/PPTX/XLSX/HTML to markdown)
+- **Document Processing**: Docling (converts PDF/DOCX/PPTX/XLSX/HTML to markdown, includes language detection)
 - **Vector Store**: ChromaDB (in-memory, ephemeral)
-- **Embeddings**: sentence-transformers/all-MiniLM-L6-v2 (local, no API)
+- **Embeddings**: Language-specific sentence-transformers models (local, no API)
+  - English: `sentence-transformers/all-MiniLM-L6-v2`
+  - French: `dangvantuan/sentence-camembert-large`
+  - Portuguese: `rufimelo/bert-large-portuguese-cased-sts`
+- **Language Detection**: langdetect (for user questions)
+- **Translation**: deep-translator (Google Translate, free)
 - **LLM**: Google Gemini API (gemini-2.0-flash-exp)
 - **Frontend**: Vanilla JavaScript (no build step)
 
@@ -56,31 +61,39 @@ Currently no automated tests. Test manually by:
 
 ### Request Flow
 
-1. **Document Upload** (`POST /upload`):
+1. **Document Upload** (`POST /upload` in backend/main.py):
    - User uploads document + API key via frontend
    - Backend validates file type and page limit (max 20 pages)
-   - Docling converts document to markdown
+   - Docling converts document to markdown and detects document language
+   - Language extracted from Docling metadata or detected from content (first 1000 chars)
    - Text chunked into ~1000 char chunks with 200 char overlap
-   - sentence-transformers generates embeddings locally
+   - Document embedded using language-specific model (EN/FR/PT)
    - Vectors stored in ChromaDB with session-specific collection
+   - Response includes `document_language` and `language_name`
 
-2. **Question Answering** (`POST /ask`):
-   - User question embedded using sentence-transformers
+2. **Question Answering** (`POST /ask` in backend/main.py):
+   - Detect user question language using langdetect
+   - If user language ≠ document language: translate question to document language
+   - Embed translated query using document's language-specific model
    - ChromaDB retrieves top 3 similar chunks (cosine similarity)
-   - Chunks + question sent to Gemini API
-   - Answer and source chunks returned to frontend
+   - Chunks + original question sent to Gemini API
+   - Gemini instructed to answer in user's original language
+   - Answer, source chunks, and language info returned to frontend
 
 3. **Session Management**:
    - Single session per server (demo app constraint)
    - Sessions stored in-memory dict: `sessions[session_id] = {processor, api_key, filename}`
-   - New upload clears ALL existing sessions (lines 233-241 in backend/main.py)
+   - New upload clears ALL existing sessions (backend/main.py)
    - `/clear` endpoint deletes ChromaDB collection to prevent memory leaks
 
 ### Key Components
 
 **backend/main.py**:
-- `DocumentProcessor` class: Handles chunking, embedding, vector storage
-- `generate_answer()`: Builds prompt and calls Gemini API
+- `embedding_models`: Dict of 3 language-specific SentenceTransformer models (EN/FR/PT)
+- `detect_language()`: Detects text language using langdetect, defaults to English
+- `translate_text()`: Translates between languages using deep-translator
+- `DocumentProcessor` class: Handles chunking, embedding, vector storage, stores document language
+- `generate_answer()`: Builds multilingual prompt and calls Gemini API with language instructions
 - API endpoints: `/upload`, `/ask`, `/clear`, `/api/health`
 - Static file serving: Mounts `../frontend` at root path
 
@@ -91,45 +104,62 @@ Currently no automated tests. Test manually by:
 
 ### Configuration Points
 
-**backend/main.py constants** (lines 18-20):
+**Constants** (backend/main.py):
 ```python
 MAX_PAGES = 20           # Page limit for documents
 CHUNK_SIZE = 1000        # Characters per chunk
 CHUNK_OVERLAP = 200      # Overlap between chunks
 ```
 
-**Embedding model** (line 39):
+**Supported languages** (backend/main.py):
 ```python
-embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-# Can swap to 'all-mpnet-base-v2' for better quality but slower
+SUPPORTED_LANGUAGES = {
+    'en': 'English',
+    'fr': 'French',
+    'pt': 'Portuguese'
+}
 ```
 
-**LLM model** (line 185):
+**Embedding models** (backend/main.py):
+```python
+embedding_models = {
+    'en': SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2'),
+    'fr': SentenceTransformer('dangvantuan/sentence-camembert-large'),
+    'pt': SentenceTransformer('rufimelo/bert-large-portuguese-cased-sts')
+}
+# Models downloaded on first use (~1.5GB total)
+```
+
+**LLM model** (backend/main.py, `generate_answer()`):
 ```python
 model = genai.GenerativeModel('gemini-2.0-flash-exp')
 # Options: gemini-1.5-pro, gemini-1.5-flash
 ```
 
-**Server port** (line 340):
+**Server port** (backend/main.py):
 ```python
 port = int(os.getenv("PORT", 8001))
 ```
 
 ### Important Implementation Details
 
-1. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks (backend/main.py:233-241).
+1. **Multilingual RAG**: System supports English, French, and Portuguese. Document language auto-detected, user question language detected, automatic translation if needed, and responses in user's language.
 
-2. **In-Memory Storage**: All vector stores and sessions are ephemeral. Server restart = data loss. This is by design for demo simplicity.
+2. **Language-Specific Embeddings**: Each language uses its own specialized embedding model for better semantic search quality. Models are stored in `embedding_models` dict.
 
-3. **API Key Handling**: Gemini API key stored in session dict, passed from frontend on each upload. No server-side persistence.
+3. **Model Loading**: All 3 embedding models (~1.5GB total) load at startup. English model pre-downloaded in Docker build, FR/PT download on first run to avoid build space issues.
 
-4. **Static File Serving**: Backend serves frontend files via FastAPI's StaticFiles mount (line 335). Frontend lives in `../frontend` relative to backend directory.
+4. **Single Session Constraint**: App only supports one active session at a time. Each new upload clears previous sessions to prevent memory leaks (backend/main.py).
 
-5. **Embedding Model Loading**: sentence-transformers downloads model (~90MB) to `~/.cache/torch/sentence_transformers/` on first run. Subsequent runs are instant.
+5. **In-Memory Storage**: All vector stores and sessions are ephemeral. Server restart = data loss. This is by design for demo simplicity.
 
-6. **PDF Page Validation**: Uses pypdf to check page count before Docling processing (lines 55-62). Non-PDF formats estimated at ~3000 chars per page (lines 82-88).
+6. **API Key Handling**: Gemini API key stored in session dict, passed from frontend on each upload. No server-side persistence.
 
-7. **Chunking Strategy**: Simple sliding window with sentence-aware breaking. Tries to break at period or newline if within second half of chunk (lines 110-133).
+7. **Static File Serving**: Backend serves frontend files via FastAPI's StaticFiles mount. Frontend lives in `../frontend` relative to backend directory.
+
+8. **PDF Page Validation**: Uses pypdf to check page count before Docling processing. Non-PDF formats estimated at ~3000 chars per page.
+
+9. **Chunking Strategy**: Simple sliding window with sentence-aware breaking. Tries to break at period or newline if within second half of chunk (backend/main.py, `_chunk_text()`).
 
 ## Deployment
 
@@ -160,20 +190,26 @@ docling-rag-webapp/
 
 ### Adding New Document Format Support
 
-1. Add extension to `allowed_extensions` list (backend/main.py:225)
+1. Add extension to `allowed_extensions` list in `/upload` endpoint (backend/main.py)
 2. Docling handles most formats automatically
 3. Consider page limit validation if not PDF
 
+### Adding New Language Support
+
+1. Add language code to `SUPPORTED_LANGUAGES` dict (backend/main.py)
+2. Add corresponding embedding model to `embedding_models` dict (backend/main.py)
+3. Language detection and translation work automatically
+
 ### Changing Retrieval Parameters
 
-Edit `search_similar()` call in `/ask` endpoint (backend/main.py:293):
+Edit `search_similar()` call in `/ask` endpoint (backend/main.py):
 ```python
-context_chunks = processor.search_similar(question, top_k=3)  # Change top_k
+context_chunks = processor.search_similar(search_query, top_k=3)  # Change top_k
 ```
 
 ### Modifying RAG Prompt
 
-Edit prompt template in `generate_answer()` function (backend/main.py:191-198).
+Edit prompt template in `generate_answer()` function (backend/main.py). Note the language instructions are dynamically added based on `user_language` parameter.
 
 ### Adding Session Persistence
 
@@ -181,4 +217,4 @@ Would require:
 1. Replace in-memory `sessions` dict with database
 2. Persist ChromaDB collections (switch from in-memory to persistent client)
 3. Store API keys securely (encrypted)
-4. Modify `/upload` to NOT clear all sessions (lines 233-241)
+4. Modify `/upload` endpoint to NOT clear all sessions
