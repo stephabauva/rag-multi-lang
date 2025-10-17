@@ -1,0 +1,13 @@
+services:
+  docling-rag:
+    container_name: docling-webapp
+    build: .
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8001
+    restart: unless-stopped
