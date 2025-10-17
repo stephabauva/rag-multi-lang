@@ -1,6 +1,17 @@
+---
+title: Multilingual RAG Demo
+emoji: 📚
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+---
+
 # 📚 Docling RAG Demo Webapp
 
 A simple, clean RAG (Retrieval-Augmented Generation) demo application built with vanilla HTML/CSS/JS frontend and Python FastAPI backend. Uses [Docling](https://github.com/docling-project/docling) for document processing and Google Gemini for AI responses.
+
+**🌍 Supports English, French, and Portuguese documents with automatic language detection and multilingual question answering!**
 
 ## Features
 
