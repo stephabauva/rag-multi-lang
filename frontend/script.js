@@ -490,6 +490,8 @@ async function handleUpload() {
         return;
     }
 
+    let eventSource = null;
+
     try {
         showLoading(getNestedTranslation('loading.processing'));
         hideStatus();
@@ -499,37 +501,60 @@ async function handleUpload() {
         formData.append('file', file);
         formData.append('api_key', apiKey);
 
-        // Show model download message after 15 seconds
-        const loadingTimeoutId = setTimeout(() => {
-            showLoading(getNestedTranslation('loading.modelDownload'));
-        }, 15000);
-
-        // Upload (no timeout - CPU processing can take a while)
-        const response = await fetch(`${API_BASE}/upload`, {
+        // Start upload (returns immediately with session_id)
+        const uploadPromise = fetch(`${API_BASE}/upload`, {
             method: 'POST',
             body: formData
         });
 
-        clearTimeout(loadingTimeoutId);
-
+        // Get session_id from response to connect to progress stream
+        const response = await uploadPromise;
         const data = await response.json();
 
         if (!response.ok) {
             throw new Error(data.detail || 'Upload failed');
         }
 
-        // Success
-        sessionId = data.session_id;
-        documentNameEl.textContent = data.filename;
+        // Connect to Server-Sent Events for progress updates
+        const tempSessionId = data.session_id;
+        eventSource = new EventSource(`${API_BASE}/api/progress/${tempSessionId}`);
 
-        // Show chat interface
-        chatOverlay.classList.add('active');
+        eventSource.onmessage = (event) => {
+            try {
+                const progress = JSON.parse(event.data);
+                // Update loading message with progress
+                showLoading(progress.message);
+
+                // If complete, finalize
+                if (progress.step === 'complete') {
+                    sessionId = tempSessionId;
+                    documentNameEl.textContent = data.filename;
+                    chatOverlay.classList.add('active');
+                    hideLoading();
+                    eventSource.close();
+                }
+            } catch (e) {
+                console.error('Progress parse error:', e);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('Progress stream error:', error);
+            eventSource.close();
+            // If error but response was OK, show success anyway
+            if (data.session_id) {
+                sessionId = data.session_id;
+                documentNameEl.textContent = data.filename;
+                chatOverlay.classList.add('active');
+                hideLoading();
+            }
+        };
 
     } catch (error) {
         console.error('Upload error:', error);
         showStatus(error.message, 'error');
-    } finally {
         hideLoading();
+        if (eventSource) eventSource.close();
     }
 }
 

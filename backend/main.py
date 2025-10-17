@@ -1,12 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import tempfile
 import os
 from typing import Optional
 import uuid
 import warnings
+import asyncio
+import json
+from collections import defaultdict
 
 # Suppress ChromaDB telemetry warnings
 warnings.filterwarnings("ignore", message=".*capture.*takes 1 positional argument.*")
@@ -45,6 +48,9 @@ app.add_middleware(
 
 # In-memory storage for sessions
 sessions = {}
+
+# Progress tracking for real-time updates
+progress_queues = defaultdict(asyncio.Queue)
 
 # Language code mapping (Docling uses ISO 639-1, langdetect returns similar codes)
 SUPPORTED_LANGUAGES = {
@@ -134,6 +140,15 @@ def translate_text(text: str, source_lang: str, target_lang: str) -> str:
         return text  # Return original text if translation fails
 
 
+def send_progress(session_id: str, message: str, step: str = ""):
+    """Send progress update to the session's queue"""
+    try:
+        queue = progress_queues[session_id]
+        queue.put_nowait({"message": message, "step": step})
+    except Exception as e:
+        print(f"Error sending progress: {e}")
+
+
 class DocumentProcessor:
     """Handles document processing and RAG functionality"""
 
@@ -160,6 +175,8 @@ class DocumentProcessor:
     def process_document(self, file_path: str, file_extension: str) -> dict:
         """Process document with Docling"""
         try:
+            send_progress(self.session_id, "📄 Converting document to markdown...", "converting")
+
             # Check PDF page limit
             if file_extension == "pdf":
                 within_limit, num_pages = self.check_pdf_pages(file_path)
@@ -176,6 +193,8 @@ class DocumentProcessor:
             # Store the DoclingDocument for HybridChunker
             self.docling_document = result.document
             markdown_content = self.docling_document.export_to_markdown()
+
+            send_progress(self.session_id, "🌍 Detecting document language...", "detecting_language")
 
             # Extract document language from Docling metadata
             doc_lang = None
@@ -198,6 +217,8 @@ class DocumentProcessor:
                 print(f"Language from Docling: {doc_lang}")
 
             self.document_language = doc_lang
+            lang_name = SUPPORTED_LANGUAGES.get(doc_lang, doc_lang.upper())
+            send_progress(self.session_id, f"✓ Language: {lang_name}", "language_detected")
 
             # Estimate pages for non-PDF formats
             if file_extension != "pdf":
@@ -210,9 +231,11 @@ class DocumentProcessor:
 
             self.document_content = markdown_content
 
+            send_progress(self.session_id, "✂️ Creating smart chunks...", "chunking")
             # Chunk using HybridChunker with document structure
             chunks = self._chunk_with_hybrid_chunker()
 
+            send_progress(self.session_id, "🧠 Generating embeddings...", "embedding")
             # Create embeddings and store in ChromaDB
             self._create_vector_store(chunks)
 
@@ -275,6 +298,8 @@ class DocumentProcessor:
 
             # Lazy-load model if not already loaded
             if self.document_language not in embedding_models:
+                lang_name = SUPPORTED_LANGUAGES.get(self.document_language, self.document_language.upper())
+                send_progress(self.session_id, f"🤖 Loading {lang_name} model (first time, ~30-60s)...", "loading_model")
                 load_language_model(self.document_language)
 
             # Get the appropriate embedding model for document language
@@ -286,6 +311,7 @@ class DocumentProcessor:
             # Generate embeddings
             embeddings = embedding_model.encode(chunks).tolist()
 
+            send_progress(self.session_id, "💾 Storing in vector database...", "storing")
             # Add to ChromaDB
             ids = [f"chunk_{i}" for i in range(len(chunks))]
             self.collection.add(
@@ -293,6 +319,8 @@ class DocumentProcessor:
                 documents=chunks,
                 ids=ids
             )
+
+            send_progress(self.session_id, "✅ Ready! Ask your questions below.", "complete")
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating vector store: {str(e)}")
@@ -395,6 +423,41 @@ async def model_status():
     }
 
 
+@app.get("/api/progress/{session_id}")
+async def progress_stream(session_id: str):
+    """Server-Sent Events endpoint for real-time progress updates"""
+    async def event_generator():
+        queue = progress_queues[session_id]
+        try:
+            while True:
+                # Wait for progress message with timeout
+                try:
+                    progress = await asyncio.wait_for(queue.get(), timeout=120.0)
+                    # Send SSE formatted message
+                    yield f"data: {json.dumps(progress)}\n\n"
+                    # If complete, stop streaming
+                    if progress.get('step') == 'complete':
+                        break
+                except asyncio.TimeoutError:
+                    # Send keepalive
+                    yield f": keepalive\n\n"
+        except Exception as e:
+            print(f"Progress stream error: {e}")
+        finally:
+            # Clean up queue
+            if session_id in progress_queues:
+                del progress_queues[session_id]
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
 @app.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
@@ -425,34 +488,43 @@ async def upload_document(
     # Create session
     session_id = str(uuid.uuid4())
 
+    # Send initial progress message
+    send_progress(session_id, "⏳ Uploading document...", "uploading")
+
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
         content = await file.read()
         tmp_file.write(content)
         tmp_file_path = tmp_file.name
 
-    try:
-        # Process document
-        processor = DocumentProcessor(session_id)
-        result = processor.process_document(tmp_file_path, file_extension)
+    # Process document in background
+    async def process_in_background():
+        try:
+            processor = DocumentProcessor(session_id)
+            result = processor.process_document(tmp_file_path, file_extension)
 
-        # Store session
-        sessions[session_id] = {
-            "processor": processor,
-            "api_key": api_key,
-            "filename": file.filename
-        }
+            # Store session
+            sessions[session_id] = {
+                "processor": processor,
+                "api_key": api_key,
+                "filename": file.filename
+            }
+        except Exception as e:
+            send_progress(session_id, f"❌ Error: {str(e)}", "error")
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_file_path):
+                os.unlink(tmp_file_path)
 
-        return {
-            **result,
-            "session_id": session_id,
-            "filename": file.filename
-        }
+    # Start processing in background
+    asyncio.create_task(process_in_background())
 
-    finally:
-        # Clean up temp file
-        if os.path.exists(tmp_file_path):
-            os.unlink(tmp_file_path)
+    # Return immediately with session_id so frontend can connect to SSE
+    return {
+        "session_id": session_id,
+        "filename": file.filename,
+        "status": "processing"
+    }
 
 
 @app.post("/ask")
