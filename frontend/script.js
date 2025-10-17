@@ -98,7 +98,8 @@ const translations = {
         },
         loading: {
             text: "Traitement en cours...",
-            processing: "Traitement de votre document..."
+            processing: "Traitement de votre document...",
+            modelDownload: "Première utilisation : téléchargement du modèle (peut prendre jusqu'à 1 minute)..."
         },
         footer: {
             tagline: "Transformez vos documents en conversations intelligentes",
@@ -212,7 +213,8 @@ const translations = {
         },
         loading: {
             text: "Processing...",
-            processing: "Processing your document..."
+            processing: "Processing your document...",
+            modelDownload: "First time: downloading model (may take up to 1 minute)..."
         },
         footer: {
             tagline: "Transform your documents into intelligent conversations",
@@ -326,7 +328,8 @@ const translations = {
         },
         loading: {
             text: "Processando...",
-            processing: "Processando seu documento..."
+            processing: "Processando seu documento...",
+            modelDownload: "Primeira vez: baixando modelo (pode levar até 1 minuto)..."
         },
         footer: {
             tagline: "Transforme seus documentos em conversas inteligentes",
@@ -496,24 +499,48 @@ async function handleUpload() {
         formData.append('file', file);
         formData.append('api_key', apiKey);
 
-        // Upload
-        const response = await fetch(`${API_BASE}/upload`, {
-            method: 'POST',
-            body: formData
-        });
+        // Create abort controller for timeout (2 minutes for large docs / model downloads)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout
 
-        const data = await response.json();
+        // Show model download message after 15 seconds
+        const loadingTimeoutId = setTimeout(() => {
+            showLoading(getNestedTranslation('loading.modelDownload'));
+        }, 15000);
 
-        if (!response.ok) {
-            throw new Error(data.detail || 'Upload failed');
+        try {
+            // Upload
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+            clearTimeout(loadingTimeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || 'Upload failed');
+            }
+
+            // Success
+            sessionId = data.session_id;
+            documentNameEl.textContent = data.filename;
+
+            // Show chat interface
+            chatOverlay.classList.add('active');
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            clearTimeout(loadingTimeoutId);
+
+            if (error.name === 'AbortError') {
+                throw new Error('Upload timed out. Please try again or check your connection.');
+            }
+            throw error;
         }
-
-        // Success
-        sessionId = data.session_id;
-        documentNameEl.textContent = data.filename;
-
-        // Show chat interface
-        chatOverlay.classList.add('active');
 
     } catch (error) {
         console.error('Upload error:', error);

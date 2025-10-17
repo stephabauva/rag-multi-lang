@@ -6,6 +6,14 @@ import tempfile
 import os
 from typing import Optional
 import uuid
+import warnings
+
+# Suppress ChromaDB telemetry warnings
+warnings.filterwarnings("ignore", message=".*capture.*takes 1 positional argument.*")
+# Suppress PyTorch pin_memory warning (expected on CPU-only environments)
+warnings.filterwarnings("ignore", message=".*pin_memory.*")
+# Suppress transformers cache deprecation warning
+warnings.filterwarnings("ignore", message=".*TRANSFORMERS_CACHE.*deprecated.*")
 
 from docling.document_converter import DocumentConverter
 from docling.chunking import HybridChunker
