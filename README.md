@@ -212,7 +212,7 @@ embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
 Edit `backend/main.py` in `generate_answer()`:
 ```python
-model = genai.GenerativeModel('gemini-2.0-flash-exp')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 # Options: 'gemini-1.5-pro', 'gemini-1.5-flash'
 ```
 

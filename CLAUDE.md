@@ -17,7 +17,7 @@ A RAG (Retrieval-Augmented Generation) demo application that processes documents
   - Portuguese: `rufimelo/bert-large-portuguese-cased-sts`
 - **Language Detection**: langdetect (for user questions)
 - **Translation**: deep-translator (Google Translate, free)
-- **LLM**: Google Gemini API (gemini-2.0-flash-exp)
+- **LLM**: Google Gemini API (gemini-2.5-flash-lite)
 - **Frontend**: Vanilla JavaScript (no build step)
 
 ## Development Commands
@@ -158,7 +158,7 @@ chunkers = {...}          # HybridChunker instances
 
 **LLM model** in backend/main.py `generate_answer()`:
 ```python
-model = genai.GenerativeModel('gemini-2.0-flash-exp')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 ```
 
 **Server port** in backend/main.py:
